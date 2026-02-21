@@ -7,11 +7,20 @@ import com.beyond.pochaon.menu.domain.Category;
 import com.beyond.pochaon.menu.domain.Menu;
 import com.beyond.pochaon.menu.domain.MenuOption;
 import com.beyond.pochaon.menu.domain.MenuOptionDetail;
-import com.beyond.pochaon.menu.repository.MenuCategoryRepository;
+import com.beyond.pochaon.menu.repository.CategoryRepository;
 import com.beyond.pochaon.menu.repository.MenuRepository;
+import com.beyond.pochaon.owner.domain.Owner;
+import com.beyond.pochaon.owner.repository.OwnerRepository;
+import com.beyond.pochaon.store.domain.Store;
+import com.beyond.pochaon.store.repository.StoreRepository;
+import jakarta.persistence.EntityNotFoundException;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.file.AccessDeniedException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,15 +30,23 @@ import java.util.List;
     public class ViewService {
 
         private final MenuRepository menuRepository;
-        private final MenuCategoryRepository menuCategoryRepository;
+        private final CategoryRepository categoryRepository;
+        private final HttpServletRequest request;
 
-        public ViewService(MenuRepository menuRepository, MenuCategoryRepository menuCategoryRepository) {
+        @Autowired
+        public ViewService(MenuRepository menuRepository, CategoryRepository categoryRepository, HttpServletRequest request) {
             this.menuRepository = menuRepository;
-            this.menuCategoryRepository = menuCategoryRepository;
+            this.categoryRepository = categoryRepository;
+            this.request = request;
         }
 
         // 1 전체 메뉴 조회
-        public List<MenuViewDto> findAllMenu() {
+        public List<MenuViewDto> findAllMenu() throws AccessDeniedException {
+
+            Long storeId = (Long) request.getAttribute("storeId");
+            if (storeId == null) {
+                throw new AccessDeniedException("해당 권한이 없습니다");
+            }
 
             List<Menu> menus = menuRepository.findAll();
             List<MenuViewDto> result = new ArrayList<>();
@@ -45,16 +62,20 @@ import java.util.List;
 
                 result.add(dto);
             }
-
             return result;
         }
 
         // 2 카테고리별 메뉴 조회
-        public CategoryViewDto findByCategory(Long categoryId) {
+        public List<CategoryViewDto> findByCategory(Long categoryId) throws AccessDeniedException {
 
-            Category category = menuCategoryRepository.findById(categoryId).orElseThrow(() -> new IllegalArgumentException("카테고리가 없습니다"));
+            Long storeId = (Long) request.getAttribute("storeId");
+            if (storeId == null) {
+                throw new AccessDeniedException("해당 권한이 없습니다");
+            }
 
-            List<Menu> menus = menuRepository.findByCategory_Id(categoryId);
+            Category category = categoryRepository.findByIdAndStoreId(categoryId, storeId).orElseThrow(() -> new IllegalArgumentException("카테고리가 없습니다"));
+
+            List<Menu> menus = menuRepository.findByCategoryId(categoryId);
 
             List<CategoryViewDto.mappingMenu> mappingMenuList = new ArrayList<>();
 
@@ -70,15 +91,25 @@ import java.util.List;
                 mappingMenuList.add(mapping);
             }
 
-            return CategoryViewDto.builder()
+            CategoryViewDto dto = CategoryViewDto.builder()
                     .categoryId(category.getId())
                     .categoryName(category.getCategoryName())
                     .mappingMenuList(mappingMenuList)
                     .build();
+
+            List<CategoryViewDto> result = new ArrayList<>();
+            result.add(dto);
+
+            return result;
         }
 
         // 3 메뉴 상세 조회
-        public MenuDetailPageDto findMenuDetail(Long menuId) {
+        public MenuDetailPageDto findMenuDetail(Long menuId) throws AccessDeniedException {
+
+            Long storeId = (Long) request.getAttribute("storeId");
+            if (storeId == null) {
+                throw new AccessDeniedException("해당 권한이 없습니다");
+            }
 
             Menu menu = menuRepository.findDetailById(menuId).orElseThrow(() -> new IllegalArgumentException("없는 메뉴입니다"));
 
@@ -118,5 +149,33 @@ import java.util.List;
                     .quantity(1) //기본값
                     .mappingOptionList(mappingOptionList)
                     .build();
+        }
+
+
+        //        4.
+        public List<CategoryViewDto> findAllCategory() {
+            List<Category> categoryList = categoryRepository.findAll();
+
+            List<CategoryViewDto> result = new ArrayList<>();
+            for (Category category : categoryList) {
+                List<Menu> menuList = menuRepository.findByCategoryId(category.getId());
+                List<CategoryViewDto.mappingMenu>mappingMenuList =new ArrayList<>();
+                for(Menu menu: menuList){
+                    mappingMenuList.add(CategoryViewDto.mappingMenu.builder()
+                            .menuId(menu.getId())
+                            .menuName(menu.getMenuName())
+                            .menuPrice(menu.getPrice())
+                            .imageUrl(menu.getMenuImageUrl())
+                            .build());
+                }
+
+                result.add(CategoryViewDto.builder()
+                        .categoryId(category.getId())
+                        .categoryName(category.getCategoryName())
+                        .mappingMenuList(mappingMenuList)
+                        .build());
+            }
+            return result;
+
         }
     }

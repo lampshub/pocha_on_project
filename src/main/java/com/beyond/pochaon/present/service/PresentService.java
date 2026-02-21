@@ -83,7 +83,7 @@ public class PresentService {
         }
 
 //        선물 본인테이블 제외
-        if(createDto.getSenderTableNum().equals(createDto.getReceiverTableNum())){
+        if(createDto.getSenderTableNum()==(createDto.getReceiverTableNum())){
             throw new IllegalArgumentException("본인 테이블에 선물할 수 없습니다");
         }
 
@@ -147,7 +147,7 @@ public class PresentService {
         PresentOwnerDto ownerDto =PresentOwnerDto.builder()
                 .senderTableNum(sender.getTableNum())
                 .groupId(groupId)
-                .receiverTableNum(receiver.getTableNum())
+                .receiverTableNum( receiver.getTableNum())
                 .menuDtoList(menuDtoList)
                 .build();
 
@@ -171,9 +171,9 @@ public class PresentService {
         receiverMenuDtoList.add(receiverMenuDto);
 
         PresentReceiverDto receiverDto= PresentReceiverDto.builder()
-                .senderTableNum(sender.getTableNum())
+                .senderTableNum( sender.getTableNum())
                 .groupId(groupId)
-                .receiverTableNum(receiver.getTableNum())
+                .receiverTableNum( receiver.getTableNum())
                 .menuList(receiverMenuDtoList)
                 .build();
 

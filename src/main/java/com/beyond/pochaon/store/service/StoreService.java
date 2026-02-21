@@ -6,11 +6,10 @@ import com.beyond.pochaon.owner.domain.Owner;
 import com.beyond.pochaon.owner.domain.Role;
 import com.beyond.pochaon.owner.repository.OwnerRepository;
 import com.beyond.pochaon.store.domain.Store;
-import com.beyond.pochaon.store.dtos.StoreCreateDto;
-import com.beyond.pochaon.store.dtos.StoreListDto;
-import com.beyond.pochaon.store.dtos.StoreTokenDto;
-import com.beyond.pochaon.store.dtos.StoreUpdateTimeDto;
+import com.beyond.pochaon.store.domain.StoreSettlement;
+import com.beyond.pochaon.store.dtos.*;
 import com.beyond.pochaon.store.repository.StoreRepository;
+import com.beyond.pochaon.store.repository.StoreSettlementRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
@@ -18,7 +17,12 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.time.YearMonth;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,12 +32,14 @@ public class StoreService {
     private final StoreRepository storeRepository;
     private final OwnerRepository ownerRepository;
     private final JwtTokenProvider jwtTokenProvider;
+    private final StoreSettlementRepository storeSettlementRepository;
 
     @Autowired
-    public StoreService(StoreRepository storeRepository, OwnerRepository ownerRepository, JwtTokenProvider jwtTokenProvider) {
+    public StoreService(StoreRepository storeRepository, OwnerRepository ownerRepository, JwtTokenProvider jwtTokenProvider, StoreSettlementRepository storeSettlementRepository) {
         this.storeRepository = storeRepository;
         this.ownerRepository = ownerRepository;
         this.jwtTokenProvider = jwtTokenProvider;
+        this.storeSettlementRepository = storeSettlementRepository;
     }
 
 
@@ -83,22 +89,58 @@ public class StoreService {
     }
 
     @Transactional
-    public void updateTime(Long storeId, StoreUpdateTimeDto dto){
+    public void updateTime(Long storeId, StoreUpdateTimeDto dto) {
         String email = SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString();
         Owner owner = ownerRepository.findByOwnerEmail(email)
                 .orElseThrow(() -> new EntityNotFoundException("Owner not found"));
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new EntityNotFoundException("Store not found"));
-        if(!store.getOwner().getId().equals(owner.getId())) {
+        if (!store.getOwner().getId().equals(owner.getId())) {
             throw new AccessDeniedException("해당 매장에 대한 권한이 없습니다");
         }
-        if(dto.getOpenAt().equals(dto.getCloseAt())){
+        if (dto.getOpenAt().equals(dto.getCloseAt())) {
             throw new IllegalStateException("오픈시간과 마감시간은 같을 수 없습니다");
         }
 
-        store.updateTime(dto.getOpenAt(),dto.getCloseAt());
+        store.updateTime(dto.getOpenAt(), dto.getCloseAt());
     }
 
+    //    달력용
+    public MonthlyCalenderResDto getMonthlyCalender(Long storeId, int year, int month) {
+        YearMonth ym = YearMonth.of(year, month);
+        LocalDateTime startDate = ym.atDay(1).atStartOfDay();
+        LocalDateTime endDate = ym.plusMonths(1).atDay(1).atStartOfDay();
 
+        List<StoreSettlement> settlements = storeSettlementRepository
+                .findByStoreIdAndMonth(storeId, startDate, endDate);
 
+        Map<Integer, Integer> dailySales = new HashMap<>();
+        for (StoreSettlement ss : settlements) {
+            dailySales.put(ss.getCreateTimeAt().getDayOfMonth(), ss.getDayTotalAmount());
+        }
+        return MonthlyCalenderResDto.builder()
+                .year(year)
+                .month(month)
+                .dailySales(dailySales)
+                .build();
+    }
+
+    //    달력에서 날짜 눌렀을 때 상세 화면 api
+    public SimpleSettlementDto getDailySettlement(Long storeId, int year, int month, int day) {
+        YearMonth ym = YearMonth.of(year, month);
+        LocalDateTime startDate = ym.atDay(1).atStartOfDay();
+        LocalDateTime endDate = ym.plusMonths(1).atDay(1).atStartOfDay();
+
+        return storeSettlementRepository.findByStoreIdAndDay(storeId, startDate, endDate, day)
+                .map(ss -> SimpleSettlementDto.builder()
+                        .dayTotal(ss.getDayTotalAmount())
+                        .orderCount(ss.getOrderCount())
+                        .averageOrderAmount(ss.getAverageOrderAmount())
+                        .build())
+                .orElse(SimpleSettlementDto.builder()
+                        .dayTotal(0)
+                        .orderCount(0)
+                        .averageOrderAmount(0)
+                        .build());
+    }
 }

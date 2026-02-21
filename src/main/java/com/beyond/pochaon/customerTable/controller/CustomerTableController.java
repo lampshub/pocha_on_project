@@ -1,12 +1,10 @@
 package com.beyond.pochaon.customerTable.controller;
 
-import com.beyond.pochaon.customerTable.dtos.AvailableTableDto;
-import com.beyond.pochaon.customerTable.dtos.TableSelectDto;
-import com.beyond.pochaon.customerTable.dtos.TableTokenDto;
-import com.beyond.pochaon.customerTable.dtos.CustomerTableStatusListDto;
+import com.beyond.pochaon.customerTable.dtos.*;
 import com.beyond.pochaon.customerTable.service.CustomerTableService;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
+import okhttp3.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/customerTable")
+@RequestMapping("/customertable")
 public class CustomerTableController {
 
     private final CustomerTableService customerTableService;
@@ -27,24 +25,28 @@ public class CustomerTableController {
 
 
     //    점주 화면기준에서 테이블 현황 json으로 받아옴 //06.02.05
-    @GetMapping("/tableStatusList")
-    public ResponseEntity<?> cTableStatusList(Claims claims) {
-        Long storeId = claims.get("storeId", Long.class);
+    @GetMapping("/tablestatuslist") // 소문자로 변경
+    public ResponseEntity<?> cTableStatusList(@RequestAttribute(value = "storeId", required = false) Long storeId) {
+        // 만약 필터에서 storeId를 못찾는다면 에러 처리
+        if (storeId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Store ID missing in token");
+        }
         List<CustomerTableStatusListDto> customerTableStatusListDtoList = customerTableService.customerTableStatusList(storeId);
         return ResponseEntity.status(HttpStatus.OK).body(customerTableStatusListDtoList);
     }
-    //  매장 전체 테이블 현황 조회
+
+
+
     @GetMapping("/list")
-    public ResponseEntity<?> cTableStatusList(@RequestAttribute("storeId") Long storeId) {
+    public ResponseEntity<?> cTableList(
+            @RequestAttribute(value = "storeId", required = false) Long storeIdFromToken,
+            @RequestParam(value = "storeId", required = false) Long storeIdFromParam
+    ) {
+        Long storeId = storeIdFromToken != null ? storeIdFromToken : storeIdFromParam;
+        if (storeId == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+
         List<CustomerTableStatusListDto> dtoList = customerTableService.customerTableStatusList(storeId);
         return ResponseEntity.status(HttpStatus.OK).body(dtoList);
-    }
-
-    //    단일 테이블 상세 조회
-    @GetMapping("/{tableId}")
-    public ResponseEntity<?> customerTableDetail(@PathVariable Long tableId, @RequestAttribute("storeId") Long storeId) {
-        CustomerTableStatusListDto dto = customerTableService.getTableStatus(tableId, storeId);
-        return ResponseEntity.status(HttpStatus.OK).body(dto);
     }
 
     @PostMapping("/select")
@@ -71,6 +73,20 @@ public class CustomerTableController {
                 customerTableService.getAvailableTables(storeId, tableNum);
 
         return ResponseEntity.ok(result);
+    }
+
+    @PostMapping("/create")
+    public ResponseEntity<?> create(@RequestAttribute Long storeId,@RequestBody TableCreateReqDto dto) {
+        customerTableService.create(storeId,dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body("created");
+
+    }
+    // 2. 가변 경로는 아래쪽에 배치하거나 더 구체적으로 명시
+    // 예: @GetMapping("/detail/{tableId}") 로 바꾸는 것이 가장 안전합니다.
+    @GetMapping("/{tableId}")
+    public ResponseEntity<?> customerTableDetail(@PathVariable Long tableId, @RequestAttribute("storeId") Long storeId) {
+        CustomerTableStatusListDto dto = customerTableService.getTableStatus(tableId, storeId);
+        return ResponseEntity.status(HttpStatus.OK).body(dto);
     }
 }
 

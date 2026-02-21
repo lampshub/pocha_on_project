@@ -24,8 +24,11 @@ public class OrderController {
     //    1.주문 생성
     @PostMapping("/create")
     public UUID create(@RequestBody OrderCreateDto createDto, HttpServletRequest request) {
-        Long tableNum = (Long)request.getAttribute("tableNum");
-        Long tableId = (Long)request.getAttribute("tableId");
+        System.out.println(request.getAttribute("tableNum"));
+        System.out.println(request.getAttribute("customerTableId"));
+        System.out.println(request.getAttribute("storeId"));
+        Integer tableNum = (Integer)request.getAttribute("tableNum");
+        Long tableId = (Long)request.getAttribute("customerTableId");
         Long storeId = (Long)request.getAttribute("storeId");
         if(tableNum == null || tableId ==null||storeId ==null){
             throw new IllegalArgumentException("토큰이 필요합니다");
@@ -39,8 +42,8 @@ public class OrderController {
     //    2.추가 주문
     @PostMapping("/add")
     public UUID add(@RequestBody OrderCreateDto createDto, @RequestParam UUID groupId,HttpServletRequest request) {
-        Long tableNum = (Long)request.getAttribute("tableNum");
-        Long tableId = (Long)request.getAttribute("tableId");
+        Integer tableNum = (Integer)request.getAttribute("tableNum");
+        Long tableId = (Long)request.getAttribute("customerTableId");
         Long storeId = (Long)request.getAttribute("storeId");
         if(tableNum == null || tableId ==null||storeId ==null){
             throw new IllegalArgumentException("토큰이 필요합니다");
@@ -53,7 +56,7 @@ public class OrderController {
 //    3. 주문내역조회
     @GetMapping("/list")
     public List<OrderListDto> list(@RequestParam UUID groupId,HttpServletRequest request){
-        Long tableNum = (Long)request.getAttribute("tableNum");
+        Integer tableNum =(Integer) request.getAttribute("tableNum");
         if(tableNum == null){
             throw new IllegalArgumentException("토큰이 필요합니다");
         }

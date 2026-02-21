@@ -5,7 +5,7 @@ import com.beyond.pochaon.menu.domain.Category;
 import com.beyond.pochaon.menu.domain.Menu;
 import com.beyond.pochaon.menu.dtos.MenuCreateReqDto;
 import com.beyond.pochaon.menu.dtos.MenuUpdateReqDto;
-import com.beyond.pochaon.menu.repository.MenuCategoryRepository;
+import com.beyond.pochaon.menu.repository.CategoryRepository;
 import com.beyond.pochaon.menu.repository.MenuRepository;
 import com.beyond.pochaon.owner.domain.Owner;
 import com.beyond.pochaon.owner.repository.OwnerRepository;
@@ -31,7 +31,7 @@ public class MenuService {
     private final MenuRepository menuRepository;
     private final OwnerRepository ownerRepository;
     private final StoreRepository storeRepository;
-    private final MenuCategoryRepository menuCategoryRepository;
+    private final CategoryRepository categoryRepository;
     private final HttpServletRequest request;
     private final S3Client s3Client;
 
@@ -39,11 +39,11 @@ public class MenuService {
     private String bucket;
 
     @Autowired
-    public MenuService(MenuRepository menuRepository, OwnerRepository ownerRepository, StoreRepository storeRepository, MenuCategoryRepository menuCategoryRepository, HttpServletRequest request, S3Client s3Client) {
+    public MenuService(MenuRepository menuRepository, OwnerRepository ownerRepository, StoreRepository storeRepository, CategoryRepository categoryRepository, HttpServletRequest request, S3Client s3Client) {
         this.menuRepository = menuRepository;
         this.ownerRepository = ownerRepository;
         this.storeRepository = storeRepository;
-        this.menuCategoryRepository = menuCategoryRepository;
+        this.categoryRepository = categoryRepository;
         this.request = request;
         this.s3Client = s3Client;
     }
@@ -62,7 +62,7 @@ public class MenuService {
             throw new AccessDeniedException("해당 권한이 없습니다");
         }
 
-        Category category = menuCategoryRepository.findById(reqDto.getCategoryId()).orElseThrow(() -> new EntityNotFoundException("Category not found"));
+        Category category = categoryRepository.findById(reqDto.getCategoryId()).orElseThrow(() -> new EntityNotFoundException("Category not found"));
         Menu menu = menuRepository.save(reqDto.toEntity(store, category));
         if (reqDto.getMenuImage() != null && !reqDto.getMenuImage().isEmpty()) {
             String fileName = "menu-" + menu.getId() + "-" + reqDto.getMenuImage().getOriginalFilename();
@@ -92,7 +92,6 @@ public class MenuService {
         if (storeId == null) {
             throw new AccessDeniedException("해당 권한이 없습니다");
         }
-
         Menu menu = menuRepository.findById(menuId).orElseThrow(() -> new EntityNotFoundException("Menu not found"));
         if (!menu.getStore().getId().equals(storeId)) {
             throw new AccessDeniedException("로그인된 매장의 메뉴가 아닙니다");
@@ -100,10 +99,9 @@ public class MenuService {
         if (!menu.getStore().getOwner().getId().equals(owner.getId())) {
             throw new AccessDeniedException("해당 권한이 없습니다");
         }
-
         Category category = menu.getCategory();
         if (reqDto.getCategoryId() != null && !reqDto.getCategoryId().equals(category.getId())) {
-            category = menuCategoryRepository.findById(reqDto.getCategoryId()).orElseThrow(() -> new EntityNotFoundException("Category not found"));
+            category = categoryRepository.findById(reqDto.getCategoryId()).orElseThrow(() -> new EntityNotFoundException("Category not found"));
         }
 
         menu.update(

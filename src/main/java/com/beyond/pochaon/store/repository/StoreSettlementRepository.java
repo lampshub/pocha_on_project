@@ -25,4 +25,17 @@ public interface StoreSettlementRepository extends JpaRepository<com.beyond.poch
             @Param("ownerId") Long ownerId,
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate);
+
+    @Query("SELECT ss FROM StoreSettlement ss JOIN FETCH ss.store WHERE ss.store.id = :storeId AND ss.createTimeAt >= :startDate AND ss.createTimeAt < :endDate ORDER BY ss.createTimeAt ASC")
+    List<StoreSettlement> findByStoreIdAndMonth(@Param("storeId") Long storeId, @Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
+
+    @Query("SELECT ss FROM StoreSettlement ss JOIN FETCH ss.store WHERE ss.store.id = :storeId " +
+            "AND ss.createTimeAt >= :startDate AND ss.createTimeAt < :endDate " +
+            "AND FUNCTION('DAY', ss.createTimeAt) = :day")
+    Optional<StoreSettlement> findByStoreIdAndDay(
+            @Param("storeId") Long storeId,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate,
+            @Param("day") int day);
+
 }

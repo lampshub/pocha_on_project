@@ -13,7 +13,7 @@ import java.util.Optional;
 @Repository
 public interface MenuRepository extends JpaRepository<Menu, Long> {
     // 카테고리별 메뉴 조회
-    List<Menu> findByCategory_Id(Long categoryId);
+    List<Menu> findByCategoryId(Long categoryId);
 
 
 

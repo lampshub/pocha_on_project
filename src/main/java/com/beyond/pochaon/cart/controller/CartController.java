@@ -26,7 +26,7 @@ public class CartController {
     //    1.카트 생성
     @PostMapping("/create")
     public ResponseEntity<?> create(@RequestBody CartCreateDto createDto, HttpServletRequest request) {
-        Long tableId = (Long) request.getAttribute("tableId");
+        Long tableId = (Long) request.getAttribute("customerTableId");
         if(tableId == null){
             throw new IllegalArgumentException("토큰이 필요합니다");
         }
@@ -38,7 +38,7 @@ public class CartController {
     //    2. 카트 조회
     @GetMapping("/list")
     public CartDto cartAll(HttpServletRequest request) {
-        Long tableId = (Long) request.getAttribute("tableId");
+        Long tableId = (Long) request.getAttribute("customerTableId");
         if(tableId == null){
             throw new IllegalArgumentException("토큰이 필요합니다");
         }
@@ -49,7 +49,7 @@ public class CartController {
     //    3. 카트 수정(수량변경)
     @PatchMapping("/quantity")
     public ResponseEntity<?> UpdateQuantity(@RequestBody CartUpdateDto updateDto,HttpServletRequest request) {
-        Long tableId = (Long) request.getAttribute("tableId");
+        Long tableId = (Long) request.getAttribute("customerTableId");
         if(tableId == null){
             throw new IllegalArgumentException("토큰이 필요합니다");
         }
@@ -60,7 +60,7 @@ public class CartController {
     //    4. 특정 줄 삭제
     @DeleteMapping("/line")
     public ResponseEntity<?> LineDelete(@RequestBody CartLineDeleteDto deleteDto,HttpServletRequest request) {
-        Long tableId = (Long) request.getAttribute("tableId");
+        Long tableId = (Long) request.getAttribute("customerTableId");
         if(tableId == null){
             throw new IllegalArgumentException("토큰이 필요합니다");
         }
@@ -71,7 +71,7 @@ public class CartController {
     //    5. 카트 비우기
     @DeleteMapping("/delete")
     public ResponseEntity<?> CartClear(HttpServletRequest request) {
-        Long tableId = (Long) request.getAttribute("tableId");
+        Long tableId = (Long) request.getAttribute("customerTableId");
         if(tableId == null){
             throw new IllegalArgumentException("토큰이 필요합니다");
         }

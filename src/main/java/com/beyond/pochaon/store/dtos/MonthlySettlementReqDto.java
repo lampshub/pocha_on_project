@@ -1,4 +1,4 @@
-package com.beyond.pochaon.customerTable.dtos;
+package com.beyond.pochaon.store.dtos;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -6,10 +6,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TableSelectDto {
-    private int tableNum;
+@Builder
+public class MonthlySettlementReqDto {
+    private int year;
+    private int month;
 
 }

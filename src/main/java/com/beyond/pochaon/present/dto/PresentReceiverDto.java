@@ -14,9 +14,9 @@ import java.util.UUID;
 @NoArgsConstructor
 @Data
 public class PresentReceiverDto {
-    private Long senderTableNum;
+    private int senderTableNum;
     private UUID groupId;
-    private Long receiverTableNum;
+    private int receiverTableNum;
     private List<MenuDto> menuList;
 
     @Builder

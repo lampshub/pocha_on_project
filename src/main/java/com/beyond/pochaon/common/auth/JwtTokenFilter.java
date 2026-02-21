@@ -35,7 +35,6 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             "/auth/sms/send",
             "/auth/sms/verify",
             "/customertable/tablestatuslist",
-            "/customertable/tablestatuslist",
             "/owner/business/verify"
     );
 
@@ -83,15 +82,19 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             // request attribute 세팅
             request.setAttribute("email", email);
             request.setAttribute("stage", stage);
+            String storeIdHeader = request.getHeader("storeId");
+            if (storeIdHeader != null) {
+                request.setAttribute("storeId", Long.parseLong(storeIdHeader));
+            }
 
             if (claims.get("storeId") != null)
                 request.setAttribute("storeId", claims.get("storeId", Long.class));
 
             if (claims.get("tableNum") != null)
-                request.setAttribute("tableNum", claims.get("tableNum", Integer.class)); //Long
+                request.setAttribute("tableNum", claims.get("tableNum", Integer.class));
 
-            if (claims.get("tableId") != null)
-                request.setAttribute("tableId", claims.get("tableId", Long.class));
+            if (claims.get("customerTableId") != null)
+                request.setAttribute("customerTableId", claims.get("customerTableId", Long.class));
 
 
             /* =========================

@@ -93,7 +93,7 @@ public class OrderService {
 
 
     // 주문공통로직
-    private UUID createOrderInternal(OrderCreateDto createDto, UUID groupId,Long tableId,Long tableNum,Long storeId) {
+    private UUID createOrderInternal(OrderCreateDto createDto, UUID groupId, Long tableId, int tableNum, Long storeId) {
 
 //        redis cart조회
         List<RedisCartItem> cartItemList = cartService.cartItems(tableId);
@@ -104,7 +104,7 @@ public class OrderService {
 //      테이블 조회
         CustomerTable customerTable = customerTableRepository.findById(tableId).orElseThrow(() -> new IllegalArgumentException("없는 테이블입니다"));
 
-        if (!customerTable.getTableNum().equals(tableNum)) {
+        if (!(customerTable.getTableNum() == (tableNum))) {
             throw new IllegalStateException("테이블 정보가 일치하지 않습니다");
         }
 
@@ -200,7 +200,6 @@ public class OrderService {
         webPublisher.publish(eventDto);
 
 
-
 //          실시간 주문 알림(테이블 단위)
 //            // ========== 점주 화면에 실시간 알림 ==========
         messagingTemplate.convertAndSend(
@@ -220,7 +219,7 @@ public class OrderService {
 
 
     //  1.주문생성
-    public UUID create(OrderCreateDto createDto, Long tableNum,Long tableId,Long storeId) {
+    public UUID create(OrderCreateDto createDto, int tableNum, Long tableId, Long storeId) {
 
         String redisKey = "idempotency:order:create:" + createDto.getIdempotencyKey();
 
@@ -249,10 +248,8 @@ public class OrderService {
 //            groupId redis저장
             groupRedisTemplate.opsForValue().set(groupKey, groupId.toString(), Duration.ofHours(4));
 
-
 //       db저장 성공 시 상태 확인용- 재전송방지
             idempotencyRedisTemplate.opsForValue().set(redisKey, "SUCCESS", Duration.ofMinutes(1));
-
             return result;
 
         } catch (Exception e) {
@@ -263,7 +260,7 @@ public class OrderService {
 
 
     //    2. 추가주문
-    public UUID add(OrderCreateDto createDto, UUID groupId, Long tableNum,Long tableId,Long storeId) {
+    public UUID add(OrderCreateDto createDto, UUID groupId, int tableNum, Long tableId, Long storeId) {
 
         //      기존 주문 유무 조회
         if (groupId == null) {
@@ -278,7 +275,7 @@ public class OrderService {
         Ordering first = exist.get(0);
 
 
-        if (!first.getCustomerTable().getTableNum().equals(tableNum)) {
+        if (!(first.getCustomerTable().getTableNum() == (tableNum))) {
             throw new IllegalStateException("다른 테이블의 주문 그룹입니다.");
         }
 
@@ -295,7 +292,7 @@ public class OrderService {
         }
         try {
 //            주문생성로직 호출
-            UUID result = createOrderInternal(createDto, groupId, tableNum, tableId,storeId);
+            UUID result = createOrderInternal(createDto, groupId,  tableId, tableNum, storeId);
 
 //          db저장 성공 시 상태 확인용 (재시도 방지)
             idempotencyRedisTemplate.opsForValue().set(redisKey, "SUCCESS", Duration.ofMinutes(1));
@@ -312,7 +309,7 @@ public class OrderService {
     }
 
     //    3. 주문내역 조회
-    public List<OrderListDto> list(UUID groupId,Long tableNum) {
+    public List<OrderListDto> list(UUID groupId, int tableNum) {
 //
         if (groupId == null) {
             throw new IllegalArgumentException("groupId가 필요합니다.");
@@ -320,13 +317,13 @@ public class OrderService {
         //        groupId조회
         List<Ordering> orderings = orderingRepository.findByGroupId(groupId);
 
-        if ( orderings == null || orderings.isEmpty()) {
+        if (orderings == null || orderings.isEmpty()) {
             throw new IllegalArgumentException("주문내역이 없습니다");
         }
 
         Ordering first = orderings.get(0);
 
-        if (!first.getCustomerTable().getTableNum().equals(tableNum)) {
+        if (!(first.getCustomerTable().getTableNum() ==(tableNum))) {
             throw new IllegalStateException("다른 테이블의 주문 그룹입니다.");
         }
 
@@ -367,31 +364,30 @@ public class OrderService {
 
                     );
                 }
-                    int unitPrice = menuPrice + optionSum;
-                    int linePrice = unitPrice * quantity;
+                int unitPrice = menuPrice + optionSum;
+                int linePrice = unitPrice * quantity;
 //                  메뉴 조립
-                    detailDtoList.add(OrderListDto.OrderListDetailDto.builder()
-                            .menuId(detail.getMenu().getId())
-                            .menuName(detail.getMenu().getMenuName())
-                            .menuQuantity(quantity)
-                            .linePrice(linePrice)
-                            .orderDetailOpDto(optionDtoList)
-                            .build()
-                    );
-                }
-//                주문정보 조립
-                result.add(OrderListDto.builder()
-                        .tableId(ordering.getCustomerTable().getTableNum())
-                        .groupId(ordering.getGroupId())
-                        .totalPrice(ordering.getTotalPrice())
-                        .listDetailDto(detailDtoList)
+                detailDtoList.add(OrderListDto.OrderListDetailDto.builder()
+                        .menuId(detail.getMenu().getId())
+                        .menuName(detail.getMenu().getMenuName())
+                        .menuQuantity(quantity)
+                        .linePrice(linePrice)
+                        .orderDetailOpDto(optionDtoList)
                         .build()
                 );
             }
-
-            return result;
+//                주문정보 조립
+            result.add(OrderListDto.builder()
+                    .tableId((long) ordering.getCustomerTable().getTableNum())
+                    .groupId(ordering.getGroupId())
+                    .totalPrice(ordering.getTotalPrice())
+                    .listDetailDto(detailDtoList)
+                    .build()
+            );
         }
 
+        return result;
+    }
 
 
     //create pubsub 조립
@@ -421,19 +417,19 @@ public class OrderService {
                 }
 
                 OrderCreateDto.WebMenu.Option webOption = OrderCreateDto.WebMenu.Option.builder()
-                                .optionGroupName(option.getOrderingOptionName())
-                                .optionDetailList(detailList)
-                                .build();
+                        .optionGroupName(option.getOrderingOptionName())
+                        .optionDetailList(detailList)
+                        .build();
 
                 optionList.add(webOption);
             }
 
 
             OrderCreateDto.WebMenu webMenu = OrderCreateDto.WebMenu.builder()
-                            .menuName(detail.getMenu().getMenuName())
-                            .quantity(detail.getOrderingDetailQuantity())
-                            .optionList(optionList)
-                            .build();
+                    .menuName(detail.getMenu().getMenuName())
+                    .quantity(detail.getOrderingDetailQuantity())
+                    .optionList(optionList)
+                    .build();
 
             webMenuList.add(webMenu);
         }

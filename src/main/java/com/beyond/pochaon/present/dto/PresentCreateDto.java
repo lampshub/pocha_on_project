@@ -14,8 +14,8 @@ import java.util.UUID;
 public class PresentCreateDto {
     private UUID idempotencyKey;
 
-    private Long senderTableNum;
-    private Long receiverTableNum;
+    private int senderTableNum;
+    private int receiverTableNum;
     private Long menuId;
     private int menuQuantity;
 }

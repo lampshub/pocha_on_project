@@ -23,6 +23,7 @@ public class CartDto {
     public static class CartDetailDto {
         private Long menuId;
         private String menuName;
+        private String fieldKey;
         private int lineTotalPrice; //unitPrice +수량
         private int menuQuantity;
         private List<CartOptionDto> cartOptionDtoList= new ArrayList<>();

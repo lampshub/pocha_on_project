@@ -53,8 +53,6 @@ public class OwnerLoginService {
         // 1. RT 검증 + Owner 조회
         Owner owner = jwtTokenProvider.validateRefreshToken(refreshToken);
 
-        // 2. 기존 RT 폐기 (Rotation)
-        redisTemplate.delete(owner.getOwnerEmail());
 
         // 3. 새로운 토큰 발급
         String newAccessToken =

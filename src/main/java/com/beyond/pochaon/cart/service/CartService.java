@@ -199,8 +199,10 @@ public class CartService {
 
         int cartTotalPrice = 0;
 
-//            redis저장된 카트데이터
-        for (RedisCartItem item : cartItemMap.values()) {
+//            redis저장된 카트데이터 key(fieldKey):value값 둘다 꺼냄
+        for (Map.Entry<String, RedisCartItem> entry : cartItemMap.entrySet()) {
+            String fieldKey = entry.getKey();
+            RedisCartItem item = entry.getValue();
 
 //            CartOptionDto조립 Name꺼내기
             List<CartDto.CartOptionDto> optionDtoList = new ArrayList<>();

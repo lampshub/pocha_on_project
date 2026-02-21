@@ -14,10 +14,14 @@ public class UrlAuthorizationMatcher {
         RULES.put("/owner/base", List.of(TokenStage.BASE));
 
         RULES.put("/store/select", List.of(TokenStage.BASE));
+        RULES.put("/store/create", List.of(TokenStage.BASE));
+        RULES.put("/store/list", List.of(TokenStage.BASE, TokenStage.STORE));
+        RULES.put("/store/monthlysettlement", List.of(TokenStage.BASE, TokenStage.STORE));
+        RULES.put("/store/dailysettlement", List.of(TokenStage.BASE, TokenStage.STORE));
         RULES.put("/store", List.of(TokenStage.STORE));
 
         RULES.put("/customertable/select", List.of(TokenStage.STORE));
-        RULES.put("/customertable", List.of(TokenStage.STORE));
+        RULES.put("/customertable", List.of(TokenStage.STORE, TokenStage.BASE));
 
         RULES.put("/ordering", List.of(TokenStage.STORE));
         RULES.put("/chat", List.of(TokenStage.TABLE));

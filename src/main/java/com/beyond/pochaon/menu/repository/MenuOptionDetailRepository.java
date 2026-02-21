@@ -5,10 +5,11 @@ import com.beyond.pochaon.menu.domain.MenuOptionDetail;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
-
+@Repository
 public interface MenuOptionDetailRepository extends JpaRepository<MenuOptionDetail, Long> {
     @Query("select coalesce(sum(d.optionDetailPrice), 0) " +
             "from MenuOptionDetail d " +

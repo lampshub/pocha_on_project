@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.nio.file.AccessDeniedException;
 import java.util.List;
 
 @RestController
@@ -24,21 +25,30 @@ public class ViewController {
 
         // 1 전체 메뉴 조회
         @GetMapping("/all")
-        public List<MenuViewDto> findAll() {
+        public List<MenuViewDto> findAll() throws AccessDeniedException {
             return viewService.findAllMenu();
         }
 
         // 2 카테고리별 메뉴 조회
         @GetMapping("/category/{categoryId}")
-        public CategoryViewDto Category(@PathVariable Long categoryId) {
+        public List<CategoryViewDto> Category(@PathVariable Long categoryId) throws AccessDeniedException {
             return viewService.findByCategory(categoryId);
         }
 
         // 3 메뉴 상세 조회
         @GetMapping("/{menuId}")
-        public MenuDetailPageDto MenuDetail(@PathVariable Long menuId) {
+        public MenuDetailPageDto MenuDetail(@PathVariable Long menuId) throws AccessDeniedException {
             return viewService.findMenuDetail(menuId);
         }
+
+
+    //        4.카테고리별 묶음
+    @GetMapping("/category")
+    public List<CategoryViewDto> getAllCategory() {
+        return viewService.findAllCategory();
     }
+}
+
+
 
 

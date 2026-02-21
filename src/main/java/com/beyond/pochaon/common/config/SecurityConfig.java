@@ -86,7 +86,8 @@ public class SecurityConfig {
                                         "/auth/sms/send",
                                         "/auth/sms/verify",
 
-                                        "/customertable/tablestatuslist",
+                                        "/customertable/**",
+                                        "/store/detail/**",
                                         "/ws-stomp/**"
                                 ).permitAll()
                                 .anyRequest().authenticated()

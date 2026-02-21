@@ -65,6 +65,7 @@ public class OwnerService {
                 .build();
     }
 
+
     public OwnerStoreSettlementResDto getStoreSettlement(String email) {
         Owner owner = ownerRepository.findByOwnerEmail(email).orElseThrow(() -> new EntityNotFoundException("없는 점주입니다. owner_ser_getstoreSettlement"));
 

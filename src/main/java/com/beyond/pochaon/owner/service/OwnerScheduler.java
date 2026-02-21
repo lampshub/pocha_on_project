@@ -53,6 +53,11 @@ public class OwnerScheduler {
         for (Store store : stores) {
             LocalTime closedAt = store.getStoreCloseAt();
 
+            if (closedAt == null) {
+                log.warn("매장ID {} 마감시간이 null → 스케줄링 스킵", store.getId());
+                continue;
+            }
+
 //            오늘 날짜와 마감시간을 합침
             LocalDateTime targetDateTime = LocalDateTime.of(LocalDate.now(), closedAt);
 //            다음날 새벽 마감인경우

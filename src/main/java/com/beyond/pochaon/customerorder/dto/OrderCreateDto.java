@@ -12,7 +12,7 @@ import java.util.UUID;
 @Builder
 public class OrderCreateDto {
 
-    private Long tableNumber;
+    private int tableNumber;
     private UUID idempotencyKey;
     private UUID groupId;
     private List<WebMenu> webMenuList = new ArrayList<>();

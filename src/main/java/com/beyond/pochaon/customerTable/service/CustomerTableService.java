@@ -3,10 +3,7 @@ package com.beyond.pochaon.customerTable.service;
 import com.beyond.pochaon.common.auth.JwtTokenProvider;
 import com.beyond.pochaon.customerTable.domain.CustomerTable;
 import com.beyond.pochaon.customerTable.domain.TableStatus;
-import com.beyond.pochaon.customerTable.dtos.AvailableTableDto;
-import com.beyond.pochaon.customerTable.dtos.CustomerTableStatusListDto;
-import com.beyond.pochaon.customerTable.dtos.TableSelectDto;
-import com.beyond.pochaon.customerTable.dtos.TableTokenDto;
+import com.beyond.pochaon.customerTable.dtos.*;
 import com.beyond.pochaon.customerTable.repository.CustomerTableRepository;
 import com.beyond.pochaon.ordering.domain.Ordering;
 import com.beyond.pochaon.ordering.repository.OrderingRepository;
@@ -43,7 +40,7 @@ public class CustomerTableService {
 
     //    웹소켓으로 테이블 상태 업데이트 전송
     public void sendTableStatusUpdate(Long storeId, Long tableId) {
-        CustomerTableStatusListDto statusListDto = getTableStatus(storeId,tableId);
+        CustomerTableStatusListDto statusListDto = getTableStatus(storeId, tableId);
         simpMessagingTemplate.convertAndSend("/topic/table-status/" + storeId, statusListDto);
     }
 
@@ -100,7 +97,7 @@ public class CustomerTableService {
             Long storeId,
             TableSelectDto dto
     ) {
-        CustomerTable table=customerTableRepository.findByTableNum((long) dto.getTableNum()).orElseThrow(()->new EntityNotFoundException("없는 테이블입니다"));
+        CustomerTable table = customerTableRepository.findByTableNum( dto.getTableNum()).orElseThrow(() -> new EntityNotFoundException("없는 테이블입니다"));
         //  STORE 토큰만 허용
         if (!"STORE".equals(stage)) {
             throw new AccessDeniedException("STORE 토큰이 필요합니다.");
@@ -129,7 +126,7 @@ public class CustomerTableService {
         return orderingRepository.findAllWithDetailsByGroupId(table.getGroupId());
     }
 
-//    채팅 가능한 테이블 목록 조회
+    //    채팅 가능한 테이블 목록 조회
     @Transactional(readOnly = true)
     public List<AvailableTableDto> getAvailableTables(Long storeId, Integer myTableNum) {
 
@@ -146,6 +143,24 @@ public class CustomerTableService {
                         .tableNum(Math.toIntExact(t.getTableNum()))
                         .build())
                 .toList();
+    }
+
+
+    public void create(Long storeId, TableCreateReqDto dtoe) {
+        Store store = storeRepository.findById(storeId).orElseThrow(() -> new EntityNotFoundException("없는 매장/ customertale_ser-create"));
+
+
+        TableCreateDto dto = TableCreateDto.builder()
+                .tableNum(dtoe.getTableNum())
+                .store(store)
+                .build();
+
+        CustomerTable customerTable = CustomerTable.builder()
+                .tableNum(dto.getTableNum())
+                .store(store)
+                .build();
+        customerTableRepository.save(customerTable);
+
     }
 }
 

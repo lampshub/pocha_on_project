@@ -29,6 +29,7 @@ public class OwnerCreateDto {
                 .ownerName(this.ownerName)
                 .password(encodedPassword)
                 .phoneNumber(this.phoneNumber)
+                .businessRegistrationNumber(this.businessRegistrationNumber)
                 .build();
     }
 }

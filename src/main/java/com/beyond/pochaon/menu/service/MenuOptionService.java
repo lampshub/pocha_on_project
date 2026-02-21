@@ -3,12 +3,10 @@ package com.beyond.pochaon.menu.service;
 import com.beyond.pochaon.menu.domain.Menu;
 import com.beyond.pochaon.menu.domain.MenuOption;
 import com.beyond.pochaon.menu.dtos.MenuOptionReqDto;
-import com.beyond.pochaon.menu.repository.MenuCategoryRepository;
 import com.beyond.pochaon.menu.repository.MenuOptionRepository;
 import com.beyond.pochaon.menu.repository.MenuRepository;
 import com.beyond.pochaon.owner.domain.Owner;
 import com.beyond.pochaon.owner.repository.OwnerRepository;
-import com.beyond.pochaon.store.repository.StoreRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,16 +22,12 @@ public class MenuOptionService {
     private final OwnerRepository ownerRepository;
     private final HttpServletRequest request;
     private final MenuOptionRepository menuOptionRepository;
-    private final StoreRepository storeRepository;
-    private final MenuCategoryRepository menuCategoryRepository;
     private final MenuRepository menuRepository;
     @Autowired
-    public MenuOptionService(OwnerRepository ownerRepository, HttpServletRequest request, MenuOptionRepository menuOptionRepository, StoreRepository storeRepository, MenuCategoryRepository menuCategoryRepository, MenuRepository menuRepository) {
+    public MenuOptionService(OwnerRepository ownerRepository, HttpServletRequest request, MenuOptionRepository menuOptionRepository, MenuRepository menuRepository) {
         this.ownerRepository = ownerRepository;
         this.request = request;
         this.menuOptionRepository = menuOptionRepository;
-        this.storeRepository = storeRepository;
-        this.menuCategoryRepository = menuCategoryRepository;
         this.menuRepository = menuRepository;
     }
 
@@ -53,7 +47,7 @@ public class MenuOptionService {
             throw new AccessDeniedException("해당 권한이 없습니다");
         }
         MenuOption menuOption = MenuOption.builder()
-                .optionName(reqDto.getOptionName())   /// ///
+                .optionName(reqDto.getOptionName())
                 .menu(menu)
                 .build();
         menuOptionRepository.save(menuOption);

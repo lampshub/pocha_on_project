@@ -21,7 +21,7 @@ import java.util.List;
 @AllArgsConstructor
 public class                                                                                                                                                                                                                                                                CustomerTableStatusListDto {
     private Long customerTableId;
-    private Long tableNum;
+    private int tableNum;
     private TableStatus tableStatus;
     private LocalDateTime groupCreateAt;
     private List<OrderingList> orderingList;

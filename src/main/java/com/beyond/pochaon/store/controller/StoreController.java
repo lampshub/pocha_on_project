@@ -22,7 +22,7 @@ public class StoreController {
     }
 
     @PostMapping("/create")
-    public ResponseEntity<?> createStore(@RequestBody StoreCreateDto dto,@AuthenticationPrincipal String email) {
+    public ResponseEntity<?> createStore(@RequestBody StoreCreateDto dto, @AuthenticationPrincipal String email) {
         storeService.createStore(dto, email);
         return ResponseEntity.status(HttpStatus.CREATED).body("OK");
     }
@@ -42,11 +42,21 @@ public class StoreController {
     }
 
     @PatchMapping("/{storeId}/updateTime")
-    public ResponseEntity<?> updateTime(@PathVariable Long storeId, @RequestBody StoreUpdateTimeDto dto){
-        storeService.updateTime(storeId,dto);
+    public ResponseEntity<?> updateTime(@PathVariable Long storeId, @RequestBody StoreUpdateTimeDto dto) {
+        storeService.updateTime(storeId, dto);
         return ResponseEntity.status(HttpStatus.OK).body("운영시간이 수정되었습니다");
     }
 
+    @GetMapping("/monthlysettlement")
+    public ResponseEntity<?> getMonthlySettlement(@ModelAttribute MonthlySettlementReqDto dto, @RequestAttribute Long storeId) {
+        return ResponseEntity.ok(storeService.getMonthlyCalender(storeId, dto.getYear(), dto.getMonth()));
+    }
+
+    @GetMapping("/dailysettlement")
+    public ResponseEntity<?> getDailySettlement(@ModelAttribute DailySettlementReqDto dto, @RequestAttribute Long storeId) {
+        return ResponseEntity.ok(storeService.getDailySettlement(storeId, dto.getYear(), dto.getMonth(), dto.getDay()));
+
+    }
 
 
 }

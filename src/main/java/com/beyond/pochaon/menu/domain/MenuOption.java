@@ -23,6 +23,7 @@ public class MenuOption {
     @JoinColumn(name = "menu_id", foreignKey = @ForeignKey(ConstraintMode.CONSTRAINT), nullable = false)
     private Menu menu;
     @OneToMany(mappedBy = "menuOption", fetch = FetchType.LAZY,  cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<MenuOptionDetail> menuOptionDetailList= new ArrayList<>();
 
     public void update(String optionName){

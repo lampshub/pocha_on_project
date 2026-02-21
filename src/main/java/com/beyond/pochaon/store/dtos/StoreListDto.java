@@ -18,6 +18,7 @@ public class StoreListDto {
     private String StoreName;
     private LocalTime openAt;
     private LocalTime closedAt;
+    private String address;
 
     public static StoreListDto fromEntity(Store store){
         return  StoreListDto.builder()
@@ -25,6 +26,7 @@ public class StoreListDto {
                 .StoreName(store.getStoreName())
                 .openAt(store.getStoreOpenAt())
                 .closedAt(store.getStoreCloseAt())
+                .address(store.getAddress())
                 .build();
     }
 }

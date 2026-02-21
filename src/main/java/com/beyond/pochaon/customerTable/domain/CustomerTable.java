@@ -20,7 +20,7 @@ public class CustomerTable extends BaseTimeEntity {
     private Long customerTableId;
 
     @Column(nullable = false)
-    private Long tableNum;
+    private int tableNum;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "store_id", foreignKey = @ForeignKey(ConstraintMode.CONSTRAINT), nullable = false)
