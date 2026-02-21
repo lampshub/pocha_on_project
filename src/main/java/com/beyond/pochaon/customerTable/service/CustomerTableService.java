@@ -145,22 +145,36 @@ public class CustomerTableService {
                 .toList();
     }
 
-
-    public void create(Long storeId, TableCreateReqDto dtoe) {
-        Store store = storeRepository.findById(storeId).orElseThrow(() -> new EntityNotFoundException("없는 매장/ customertale_ser-create"));
-
-
-        TableCreateDto dto = TableCreateDto.builder()
-                .tableNum(dtoe.getTableNum())
-                .store(store)
-                .build();
-
+// 점주 설정관리 화면에서 테이블 관리
+    public void create(Long storeId, TableCreateReqDto dto) {
+        Store store = storeRepository.findById(storeId).orElseThrow(() -> new EntityNotFoundException("없는 매장/ customertable_ser-create"));
+//
+//        TableCreateDto dto = TableCreateDto.builder()
+//                .tableNum(dtoe.getTableNum())
+//                .store(store)
+//                .build();
+        if (customerTableRepository.existsByStoreIdAndTableNum(storeId, dto.getTableNum())) {
+            throw new IllegalArgumentException("이미 존재하는 테이블 번호입니다.");
+        }
         CustomerTable customerTable = CustomerTable.builder()
                 .tableNum(dto.getTableNum())
                 .store(store)
                 .build();
         customerTableRepository.save(customerTable);
+    }
 
+    public void delete(Long storeId, Long customerTableId) {
+        Store store = storeRepository.findById(storeId).orElseThrow(() -> new EntityNotFoundException("없는 매장"));
+        CustomerTable customerTable = customerTableRepository.findById(customerTableId).orElseThrow(()-> new EntityNotFoundException("없는 테이블"));
+        customerTableRepository.delete(customerTable);
+    }
+    public List<TableResToOwnerDto> getTables(Long storeId) {
+        Store store = storeRepository.findById(storeId).orElseThrow(() -> new EntityNotFoundException("없는 매장"));
+        return customerTableRepository.findByStoreId(storeId).stream()
+                .map(c_table -> new TableResToOwnerDto(
+                        c_table.getCustomerTableId(),
+                        c_table.getTableNum()))
+                .toList();
     }
 }
 

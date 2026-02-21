@@ -14,6 +14,9 @@ import java.util.Optional;
 @Repository
 public interface CustomerTableRepository extends JpaRepository<CustomerTable, Long> {
     List<CustomerTable> findByStore(Store store);
+    List<CustomerTable> findByStoreId(Long storeId);
+    boolean existsByStoreIdAndTableNum(Long storeId, int tableNum);
+
     Optional<CustomerTable> findByTableNum(int tableNum);
     //    테이블 + 매장 fetch join(권한 검증용)
     @Query("SELECT ct FROM CustomerTable ct " +

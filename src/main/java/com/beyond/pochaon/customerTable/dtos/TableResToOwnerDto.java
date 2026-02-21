@@ -5,10 +5,12 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Builder
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 @Data
-public class TableCreateReqDto {
-    private int tableNum;
+@Builder
+public class TableResToOwnerDto {
+        private Long customerTableId;
+        private int tableNum;
+
 }
