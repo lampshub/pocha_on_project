@@ -20,21 +20,21 @@ public class MenuOptionController {
 
 
     //    owner 메뉴옵션 추가
-    @PostMapping("/{menuId}/option")
-    public ResponseEntity<?> createOption(@PathVariable Long menuId, @ModelAttribute  MenuOptionReqDto reqDto) throws AccessDeniedException {
+    @PostMapping("/{menuid}/option")
+    public ResponseEntity<?> createOption(@PathVariable("menuid") Long menuId, @ModelAttribute  MenuOptionReqDto reqDto) throws AccessDeniedException {
         return ResponseEntity.status(HttpStatus.CREATED).body(menuOptionService.createOption(menuId, reqDto));
     }
 
     //    owner 메뉴옵션 수정
-    @PutMapping("/option/{optionId}")
-    public ResponseEntity<?> updateOption(@PathVariable Long optionId, @ModelAttribute  MenuOptionReqDto reqDto) throws AccessDeniedException {
+    @PutMapping("/option/{optionid}")
+    public ResponseEntity<?> updateOption(@PathVariable("optionid") Long optionId, @ModelAttribute  MenuOptionReqDto reqDto) throws AccessDeniedException {
         menuOptionService.updateOption(optionId, reqDto);
         return ResponseEntity.status(HttpStatus.OK).body("메뉴옵션 수정 완료되었습니다");
     }
 
     // owner 메뉴옵션 삭제
-    @DeleteMapping("/option/{optionId}")
-    public ResponseEntity<?> deleteOption(@PathVariable Long optionId) throws AccessDeniedException {
+    @DeleteMapping("/option/{optionid}")
+    public ResponseEntity<?> deleteOption(@PathVariable("optionid") Long optionId) throws AccessDeniedException {
         menuOptionService.deleteOption(optionId);
         return ResponseEntity.status(HttpStatus.OK).body("메뉴옵션이 삭제되었습니다");
     }

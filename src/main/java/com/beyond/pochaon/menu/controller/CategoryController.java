@@ -27,15 +27,15 @@ public class CategoryController {
     }
 
     //    메뉴 카테고리 수정
-    @PutMapping("/{categoryId}")
-    public ResponseEntity<?> updateCategory(@PathVariable Long categoryId, @RequestBody CategoryReqDto reqDto) throws AccessDeniedException {
+    @PutMapping("/{categoryid}")
+    public ResponseEntity<?> updateCategory(@PathVariable("categoryid") Long categoryId, @RequestBody CategoryReqDto reqDto) throws AccessDeniedException {
         categoryService.updateCategory(categoryId, reqDto);
         return ResponseEntity.status(HttpStatus.OK).body("카테고리 수정 완료");
     }
 
     //    메뉴 카테고리 삭제
-    @DeleteMapping("/{categoryId}")
-    public ResponseEntity<?> deleteCategory(@PathVariable Long categoryId) throws AccessDeniedException {
+    @DeleteMapping("/{categoryid}")
+    public ResponseEntity<?> deleteCategory(@PathVariable("categoryid") Long categoryId) throws AccessDeniedException {
         categoryService.deleteCategory(categoryId);
         return ResponseEntity.status(HttpStatus.OK).body("카테고리 삭제 완료");
     }

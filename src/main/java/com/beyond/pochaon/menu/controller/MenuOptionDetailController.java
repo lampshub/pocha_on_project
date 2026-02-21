@@ -19,23 +19,23 @@ public class MenuOptionDetailController {
     }
 
     //    owner 메뉴옵션상세 추가
-    @PostMapping("/{optionId}/detail")
-    public ResponseEntity<?> createOptionDetail(@PathVariable Long optionId, @ModelAttribute MenuOptionDetailReqDto reqDto) throws AccessDeniedException {
-    Long optionDetailId = menuOptionDetailService.createOptionDetail(optionId, reqDto);
-    return ResponseEntity.status(HttpStatus.CREATED).body(optionDetailId);
+    @PostMapping("/{optionid}/detail")
+    public ResponseEntity<?> createOptionDetail(@PathVariable("optionid") Long optionId, @ModelAttribute MenuOptionDetailReqDto reqDto) throws AccessDeniedException {
+        Long optionDetailId = menuOptionDetailService.createOptionDetail(optionId, reqDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(optionDetailId);
     }
 
     //    owner 메뉴옵션상세 수정
-    @PutMapping("/detail/{optionDetailId}")
-    public ResponseEntity<?> updateOptionDetail(@PathVariable Long optionDetailId, @ModelAttribute MenuOptionDetailReqDto reqDto) throws AccessDeniedException {
-    menuOptionDetailService.updateOptionDetail(optionDetailId, reqDto);
+    @PutMapping("/detail/{optiondetailid}")
+    public ResponseEntity<?> updateOptionDetail(@PathVariable("optiondetailid") Long optionDetailId, @ModelAttribute MenuOptionDetailReqDto reqDto) throws AccessDeniedException {
+        menuOptionDetailService.updateOptionDetail(optionDetailId, reqDto);
         return ResponseEntity.status(HttpStatus.OK).body("메뉴옵션상세 수정 완료되었습니다");
     }
 
     // owner 메뉴옵션상세 삭제
-    @DeleteMapping("/detail/{optionDetailId}")
-    public ResponseEntity<?> deleteOptionDetail(@PathVariable Long optionDetailId) throws AccessDeniedException {
-    menuOptionDetailService.deleteOptionDetail(optionDetailId);
+    @DeleteMapping("/detail/{optiondetailid}")
+    public ResponseEntity<?> deleteOptionDetail(@PathVariable("optiondetailid") Long optionDetailId) throws AccessDeniedException {
+        menuOptionDetailService.deleteOptionDetail(optionDetailId);
         return ResponseEntity.status(HttpStatus.OK).body("메뉴옵션상세가 삭제되었습니다");
     }
 }

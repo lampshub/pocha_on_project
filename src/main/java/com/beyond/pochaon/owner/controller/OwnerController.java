@@ -53,14 +53,14 @@ public class OwnerController {
     }
 
     //    mypage 조회
-    @GetMapping("/myPage")
+    @GetMapping("/mypage")
     public ResponseEntity<MyPageResDto> getMyPage() {
         MyPageResDto response = ownerMyPageService.getMyPage();
         return ResponseEntity.ok(response);
     }
 
     //    mypage에서 비밀번호 변경
-    @PutMapping("/myPage/updatePassword")
+    @PutMapping("/mypage/updatepassword")
     public ResponseEntity<?> updatePassword(@RequestBody UpdatePasswordReqDto reqDto) {
         ownerMyPageService.myPageUpdatePassword(reqDto);
         return ResponseEntity.ok("비밀번호 변경 완료");
@@ -72,7 +72,7 @@ public class OwnerController {
         return ResponseEntity.ok(dto);
     }
 
-//  월매출 정산
+    //  월매출 정산
     @GetMapping("/storesettlement")
     public ResponseEntity<?> getStoreSettlement(@AuthenticationPrincipal String email) {
         OwnerStoreSettlementResDto dto = ownerService.getStoreSettlement(email);

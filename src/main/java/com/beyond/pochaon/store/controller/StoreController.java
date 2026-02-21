@@ -41,8 +41,8 @@ public class StoreController {
         return storeService.selectStore(email, dto.getStoreId());
     }
 
-    @PatchMapping("/{storeId}/updateTime")
-    public ResponseEntity<?> updateTime(@PathVariable Long storeId, @RequestBody StoreUpdateTimeDto dto) {
+    @PatchMapping("/{storeid}/updatetime")
+    public ResponseEntity<?> updateTime(@PathVariable("storeid") Long storeId, @RequestBody StoreUpdateTimeDto dto) {
         storeService.updateTime(storeId, dto);
         return ResponseEntity.status(HttpStatus.OK).body("운영시간이 수정되었습니다");
     }
