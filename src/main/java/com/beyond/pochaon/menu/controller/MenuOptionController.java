@@ -21,13 +21,13 @@ public class MenuOptionController {
 
     //    owner 메뉴옵션 추가
     @PostMapping("/{menuid}/option")
-    public ResponseEntity<?> createOption(@PathVariable("menuid") Long menuId, @ModelAttribute  MenuOptionReqDto reqDto) throws AccessDeniedException {
+    public ResponseEntity<?> createOption(@PathVariable("menuid") Long menuId, @RequestBody MenuOptionReqDto reqDto) throws AccessDeniedException {
         return ResponseEntity.status(HttpStatus.CREATED).body(menuOptionService.createOption(menuId, reqDto));
     }
 
     //    owner 메뉴옵션 수정
     @PutMapping("/option/{optionid}")
-    public ResponseEntity<?> updateOption(@PathVariable("optionid") Long optionId, @ModelAttribute  MenuOptionReqDto reqDto) throws AccessDeniedException {
+    public ResponseEntity<?> updateOption(@PathVariable("optionid") Long optionId, @RequestBody MenuOptionReqDto reqDto) throws AccessDeniedException {
         menuOptionService.updateOption(optionId, reqDto);
         return ResponseEntity.status(HttpStatus.OK).body("메뉴옵션 수정 완료되었습니다");
     }

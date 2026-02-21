@@ -20,14 +20,14 @@ public class MenuOptionDetailController {
 
     //    owner 메뉴옵션상세 추가
     @PostMapping("/{optionid}/detail")
-    public ResponseEntity<?> createOptionDetail(@PathVariable("optionid") Long optionId, @ModelAttribute MenuOptionDetailReqDto reqDto) throws AccessDeniedException {
+    public ResponseEntity<?> createOptionDetail(@PathVariable("optionid") Long optionId, @RequestBody MenuOptionDetailReqDto reqDto) throws AccessDeniedException {
         Long optionDetailId = menuOptionDetailService.createOptionDetail(optionId, reqDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(optionDetailId);
     }
 
     //    owner 메뉴옵션상세 수정
     @PutMapping("/detail/{optiondetailid}")
-    public ResponseEntity<?> updateOptionDetail(@PathVariable("optiondetailid") Long optionDetailId, @ModelAttribute MenuOptionDetailReqDto reqDto) throws AccessDeniedException {
+    public ResponseEntity<?> updateOptionDetail(@PathVariable("optiondetailid") Long optionDetailId, @RequestBody MenuOptionDetailReqDto reqDto) throws AccessDeniedException {
         menuOptionDetailService.updateOptionDetail(optionDetailId, reqDto);
         return ResponseEntity.status(HttpStatus.OK).body("메뉴옵션상세 수정 완료되었습니다");
     }
