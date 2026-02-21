@@ -40,4 +40,10 @@ public class MenuController {
         menuService.deleteMenu(menuId);
         return ResponseEntity.status(HttpStatus.OK).body("메뉴가 삭제되었습니다");
     }
+
+    //    메뉴 상세 조회(점주 메뉴 수정시 기본값 세팅용)
+    @GetMapping("/{menuid}/detail")
+    public ResponseEntity<?> getMenuDetail(@PathVariable("menuid") Long menuId) throws AccessDeniedException {
+        return ResponseEntity.ok(menuService.getMenuDetail(menuId));
+    }
 }

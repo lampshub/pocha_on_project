@@ -3,7 +3,10 @@ package com.beyond.pochaon.menu.service;
 
 import com.beyond.pochaon.menu.domain.Category;
 import com.beyond.pochaon.menu.domain.Menu;
+import com.beyond.pochaon.menu.domain.MenuOption;
+import com.beyond.pochaon.menu.domain.MenuOptionDetail;
 import com.beyond.pochaon.menu.dtos.MenuCreateReqDto;
+import com.beyond.pochaon.menu.dtos.MenuResToOwnerDto;
 import com.beyond.pochaon.menu.dtos.MenuUpdateReqDto;
 import com.beyond.pochaon.menu.repository.CategoryRepository;
 import com.beyond.pochaon.menu.repository.MenuRepository;
@@ -24,6 +27,8 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @Transactional
@@ -55,7 +60,7 @@ public class MenuService {
 
         Long storeId = (Long) request.getAttribute("storeId");
         if (storeId == null) {
-            throw new AccessDeniedException("해당 권한이 없습니다");
+            throw new AccessDeniedException("매장 선택 후 이용가능합니다");
         }
         Store store = storeRepository.findById(storeId).orElseThrow(() -> new EntityNotFoundException("Store not found"));
         if (!store.getOwner().getId().equals(owner.getId())) {
@@ -90,7 +95,7 @@ public class MenuService {
 
         Long storeId = (Long) request.getAttribute("storeId");
         if (storeId == null) {
-            throw new AccessDeniedException("해당 권한이 없습니다");
+            throw new AccessDeniedException("매장 선택 후 이용가능합니다");
         }
         Menu menu = menuRepository.findById(menuId).orElseThrow(() -> new EntityNotFoundException("Menu not found"));
         if (!menu.getStore().getId().equals(storeId)) {
@@ -153,7 +158,7 @@ public class MenuService {
 
         Long storeId = (Long) request.getAttribute("storeId");
         if (storeId == null) {
-            throw new AccessDeniedException("해당 권한이 없습니다");
+            throw new AccessDeniedException("매장 선택 후 이용가능합니다");
         }
         Menu menu = menuRepository.findById(menuId).orElseThrow(() -> new EntityNotFoundException("Menu not found"));
         if (!menu.getStore().getId().equals(storeId)) {
@@ -170,5 +175,45 @@ public class MenuService {
         }
         // 메뉴 삭제
         menuRepository.delete(menu);
+    }
+
+    @Transactional
+//    메뉴 상세 조회 (점주 메뉴 수정용)
+    public MenuResToOwnerDto getMenuDetail(Long menuId) throws AccessDeniedException {
+        Long storeId = (Long) request.getAttribute("storeId");
+        if (storeId == null) throw new AccessDeniedException("매장 선택 후 이용가능합니다");
+
+        Menu menu = menuRepository.findDetailById(menuId)
+                .orElseThrow(() -> new EntityNotFoundException("Menu not found"));
+
+        List<MenuResToOwnerDto.OptionDto> optionDtos = new ArrayList<>();
+
+        for (MenuOption option : menu.getMenuOptionList()) {
+            List<MenuResToOwnerDto.OptionDetailDto> detailDtos = new ArrayList<>();
+
+            for (MenuOptionDetail detail : option.getMenuOptionDetailList()) {
+                detailDtos.add(MenuResToOwnerDto.OptionDetailDto.builder()
+                        .optionDetailId(detail.getId())
+                        .optionDetailName(detail.getOptionDetailName())
+                        .optionDetailPrice(detail.getOptionDetailPrice())
+                        .build());
+            }
+            optionDtos.add(MenuResToOwnerDto.OptionDto.builder()
+                    .optionId(option.getId())
+                    .optionName(option.getOptionName())
+                    .details(detailDtos)
+                    .build());
+        }
+
+        return MenuResToOwnerDto.builder()
+                .menuName(menu.getMenuName())
+                .price(menu.getPrice())
+                .origin(menu.getOrigin())
+                .explanation(menu.getExplanation())
+                .imageUrl(menu.getMenuImageUrl())
+                .categoryId(menu.getCategory().getId())
+                .categoryName(menu.getCategory().getCategoryName())
+                .options(optionDtos)
+                .build();
     }
 }
