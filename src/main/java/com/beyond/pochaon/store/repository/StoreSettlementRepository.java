@@ -1,8 +1,6 @@
 package com.beyond.pochaon.store.repository;
 
-import com.beyond.pochaon.store.domain.Store;
 import com.beyond.pochaon.store.domain.StoreSettlement;
-import com.beyond.pochaon.store.dtos.SimpleSettlementDto;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -13,7 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface StoreSettlementRepository extends JpaRepository<com.beyond.pochaon.store.domain.StoreSettlement, Long> {
+public interface StoreSettlementRepository extends JpaRepository<StoreSettlement, Long> {
 
     StoreSettlement findByStoreId(Long storeId);
 

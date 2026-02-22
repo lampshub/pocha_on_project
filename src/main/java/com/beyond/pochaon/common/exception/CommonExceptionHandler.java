@@ -3,6 +3,7 @@ package com.beyond.pochaon.common.exception;
 import com.beyond.pochaon.common.dtos.CommonErrorDto;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.NonNull;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authorization.AuthorizationDeniedException;
@@ -93,12 +94,28 @@ public class CommonExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ce_dto);
     }
 
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<?> duplicate(DataIntegrityViolationException e) {
+        String message = "중복된 데이터가 존재합니다.";
+        if (e.getMessage().contains("businessRegistrationNumber")) {
+            message = "이미 등록된 사업자등록번호입니다.";
+        } else if (e.getMessage().contains("ownerEmail")) {
+            message = "이미 사용 중인 이메일입니다.";
+        }
+        CommonErrorDto ce_dto = CommonErrorDto.builder()
+                .statusCode(400)
+                .errorMessage(message)
+                .build();
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ce_dto);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> exception(Exception e) {
         e.printStackTrace();
+
         CommonErrorDto ce_dto = CommonErrorDto.builder()
                 .statusCode(500)
-                .errorMessage(e.getMessage())
+                .errorMessage("서버 내부 오류가 발생했습니다")
                 .build();
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ce_dto);
     }

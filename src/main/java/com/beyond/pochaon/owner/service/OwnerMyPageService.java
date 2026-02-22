@@ -7,8 +7,6 @@ import com.beyond.pochaon.owner.dtos.UpdatePasswordReqDto;
 import com.beyond.pochaon.owner.repository.OwnerRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -49,12 +47,12 @@ public class OwnerMyPageService {
         }
 
 //        기존 비밀번호와 새 비밀번호가 같은지 검증
-        if(passwordEncoder.matches(reqDto.getOldPassword(), reqDto.getNewPassword())) {
+        if (passwordEncoder.matches(reqDto.getNewPassword(), owner.getPassword())) {
             throw new RuntimeException("기존 비밀번호와 동일한 비밀번호를 입력했습니다");
         }
         owner.changePassword(passwordEncoder.encode(reqDto.getNewPassword()));
 
-//        ownerRepository.save(owner);
+        ownerRepository.save(owner);
 ////        rt 삭제
 //        redisTemplate.delete(owner.getOwnerEmail());
 

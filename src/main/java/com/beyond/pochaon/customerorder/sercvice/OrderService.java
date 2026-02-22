@@ -1,25 +1,23 @@
 package com.beyond.pochaon.customerorder.sercvice;
 
 
-import com.beyond.pochaon.cart.service.CartService;
 import com.beyond.pochaon.cart.domain.RedisCartItem;
+import com.beyond.pochaon.cart.service.CartService;
 import com.beyond.pochaon.common.web.WebPublisher;
 import com.beyond.pochaon.customerTable.domain.CustomerTable;
 import com.beyond.pochaon.customerTable.repository.CustomerTableRepository;
-import com.beyond.pochaon.customerorder.dto.*;
+import com.beyond.pochaon.customerorder.dto.OrderCreateDto;
+import com.beyond.pochaon.customerorder.dto.OrderListDto;
 import com.beyond.pochaon.menu.domain.Menu;
 import com.beyond.pochaon.menu.domain.MenuOption;
 import com.beyond.pochaon.menu.domain.MenuOptionDetail;
 import com.beyond.pochaon.menu.repository.MenuOptionDetailRepository;
 import com.beyond.pochaon.menu.repository.MenuOptionRepository;
 import com.beyond.pochaon.menu.repository.MenuRepository;
-
 import com.beyond.pochaon.ordering.domain.*;
 import com.beyond.pochaon.ordering.dto.OrderQueueDto;
 import com.beyond.pochaon.ordering.repository.OrderingRepository;
 import com.beyond.pochaon.present.dto.OwnerEventDto;
-import jakarta.servlet.http.HttpServletRequest;
-import org.aspectj.weaver.ast.Or;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -429,12 +427,14 @@ public class OrderService {
                     .menuName(detail.getMenu().getMenuName())
                     .quantity(detail.getOrderingDetailQuantity())
                     .optionList(optionList)
+                    .menuPrice(detail.getMenuPrice())
                     .build();
 
             webMenuList.add(webMenu);
         }
 
         return OrderCreateDto.builder()
+                .orderingId(ordering.getId())
                 .tableNumber(customerTable.getTableNum())
                 .groupId(ordering.getGroupId())
                 .idempotencyKey(ordering.getIdempotencyKey())

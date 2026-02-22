@@ -1,12 +1,12 @@
 package com.beyond.pochaon.common.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.beyond.pochaon.cart.domain.RedisCartItem;
 import com.beyond.pochaon.common.service.SseAlramService;
 import com.beyond.pochaon.common.service.SseChatAlarmService;
 import com.beyond.pochaon.common.web.WebSubscriber;
 import com.beyond.pochaon.present.dto.OwnerEventDto;
 import com.beyond.pochaon.present.dto.PresentReceiverDto;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -20,7 +20,6 @@ import org.springframework.data.redis.listener.PatternTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.data.redis.listener.adapter.MessageListenerAdapter;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
-import org.springframework.data.redis.serializer.GenericToStringSerializer;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 

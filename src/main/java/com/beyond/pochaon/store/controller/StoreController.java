@@ -41,6 +41,11 @@ public class StoreController {
         return storeService.selectStore(email, dto.getStoreId());
     }
 
+    @GetMapping("/{storeid}/time")
+    public ResponseEntity<StoreTimeResDto> getStoreHours(@PathVariable("storeid") Long storeId) {
+        return ResponseEntity.ok(storeService.getStoreHours(storeId));
+    }
+
     @PatchMapping("/{storeid}/updatetime")
     public ResponseEntity<?> updateTime(@PathVariable("storeid") Long storeId, @RequestBody StoreUpdateTimeDto dto) {
         storeService.updateTime(storeId, dto);

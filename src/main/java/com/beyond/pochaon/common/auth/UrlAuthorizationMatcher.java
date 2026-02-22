@@ -13,7 +13,7 @@ public class UrlAuthorizationMatcher {
 
         RULES.put("/owner/base", List.of(TokenStage.BASE));
 
-        RULES.put("/store/select", List.of(TokenStage.BASE));
+        RULES.put("/store/select", List.of(TokenStage.BASE, TokenStage.STORE));
         RULES.put("/store/create", List.of(TokenStage.BASE));
         RULES.put("/store/list", List.of(TokenStage.BASE, TokenStage.STORE));
         RULES.put("/store/monthlysettlement", List.of(TokenStage.BASE, TokenStage.STORE));

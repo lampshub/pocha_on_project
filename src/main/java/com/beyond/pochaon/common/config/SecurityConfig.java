@@ -101,7 +101,7 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(
                 Arrays.asList("http://localhost:3002")
         );
-        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
+//        configuration.setAllowedOriginPatterns(Arrays.asList("*")); //
         configuration.setAllowedMethods(Arrays.asList("*"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);

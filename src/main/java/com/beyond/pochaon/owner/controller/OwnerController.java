@@ -6,13 +6,12 @@ import com.beyond.pochaon.owner.service.OwnerLoginService;
 import com.beyond.pochaon.owner.service.OwnerMyPageService;
 import com.beyond.pochaon.owner.service.OwnerService;
 import com.beyond.pochaon.store.dtos.SimpleSettlementDto;
-import com.beyond.pochaon.store.repository.StoreSettlementRepository;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/owner")
@@ -72,7 +71,7 @@ public class OwnerController {
         return ResponseEntity.ok(dto);
     }
 
-    //  월매출 정산
+//  월매출 정산
     @GetMapping("/storesettlement")
     public ResponseEntity<?> getStoreSettlement(@AuthenticationPrincipal String email) {
         OwnerStoreSettlementResDto dto = ownerService.getStoreSettlement(email);

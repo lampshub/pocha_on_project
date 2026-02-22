@@ -2,9 +2,7 @@ package com.beyond.pochaon.customerTable.controller;
 
 import com.beyond.pochaon.customerTable.dtos.*;
 import com.beyond.pochaon.customerTable.service.CustomerTableService;
-import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
-import okhttp3.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,7 +32,6 @@ public class CustomerTableController {
         List<CustomerTableStatusListDto> customerTableStatusListDtoList = customerTableService.customerTableStatusList(storeId);
         return ResponseEntity.status(HttpStatus.OK).body(customerTableStatusListDtoList);
     }
-
 
 
     @GetMapping("/list")
@@ -77,8 +74,8 @@ public class CustomerTableController {
 
     //    점주 설정관리 화면 - 테이블관리 - 추가/삭제/목록조회
     @PostMapping("/create")
-    public ResponseEntity<?> create(@RequestAttribute Long storeId,@RequestBody TableCreateReqDto dto) {
-        customerTableService.create(storeId,dto);
+    public ResponseEntity<?> create(@RequestAttribute Long storeId, @RequestBody TableCreateReqDto dto) {
+        customerTableService.create(storeId, dto);
         return ResponseEntity.status(HttpStatus.CREATED).body("created");
     }
 
@@ -93,6 +90,11 @@ public class CustomerTableController {
         return ResponseEntity.status(HttpStatus.OK).body(customerTableService.getTables(storeId));
     }
 
+    @PostMapping("/tablerollback")
+    public ResponseEntity<?> tableRollBack(@RequestBody TableSelectDto dto) {
+        customerTableService.tableRollBack(dto.getTableNum());
+        return ResponseEntity.ok().body("OK/상태변경");
+    }
 
 
     // 2. 가변 경로는 아래쪽에 배치하거나 더 구체적으로 명시

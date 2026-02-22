@@ -205,15 +205,15 @@ public class MenuService {
                     .build());
         }
 
-        return MenuResToOwnerDto.builder()
-                .menuName(menu.getMenuName())
-                .price(menu.getPrice())
-                .origin(menu.getOrigin())
-                .explanation(menu.getExplanation())
-                .imageUrl(menu.getMenuImageUrl())
-                .categoryId(menu.getCategory().getId())
-                .categoryName(menu.getCategory().getCategoryName())
-                .options(optionDtos)
-                .build();
-    }
+            return MenuResToOwnerDto.builder()
+                    .menuName(menu.getMenuName())
+                    .price(menu.getPrice())
+                    .origin(menu.getOrigin())
+                    .explanation(menu.getExplanation())
+                    .imageUrl(menu.getMenuImageUrl())
+                    .categoryId(menu.getCategory().getId())
+                    .categoryName(menu.getCategory().getCategoryName())
+                    .options(optionDtos)
+                    .build();
+        }
 }

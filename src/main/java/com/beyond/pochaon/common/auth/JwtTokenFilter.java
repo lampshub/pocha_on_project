@@ -5,6 +5,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -20,7 +21,7 @@ import java.util.List;
 //permitAll :    의존O	        의존 X
 //보안 강도	:     느슨	        엄격
 //실무 트렌드:	  과거	        현재
-
+@Slf4j
 public class JwtTokenFilter extends OncePerRequestFilter {
 
     // 인증 예외 URL
@@ -35,7 +36,10 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             "/auth/sms/send",
             "/auth/sms/verify",
             "/customertable/tablestatuslist",
-            "/owner/business/verify"
+            "/customertable/tablerollback",
+            "/customertable/tablestatuslist",
+            "/owner/business/verify",
+            "/connect"
     );
 
     private final JwtTokenProvider jwtTokenProvider;
@@ -47,6 +51,10 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     // 화이트리스트 URL은 필터 제외
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+log.info("option요청 통과 로그: {}", request.getRequestURI());
+            return true;
+        }
         String uri = request.getRequestURI();
         return WHITE_LIST.stream().anyMatch(uri::startsWith);
     }
@@ -60,6 +68,8 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 
         String uri = request.getRequestURI();
         String bearerToken = request.getHeader("Authorization");
+        log.info(">>> 필터 진입: {} ", request.getMethod() + " {}" + uri);
+        log.info(">>> Authorization: {}", (bearerToken != null ? bearerToken.substring(0, Math.min(30, bearerToken.length())) + "..." : "없음"));
 
         // 토큰 없음 → 인증 실패
         if (bearerToken == null || !bearerToken.startsWith("Bearer ")) {

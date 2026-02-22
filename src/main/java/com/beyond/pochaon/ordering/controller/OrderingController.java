@@ -2,7 +2,6 @@ package com.beyond.pochaon.ordering.controller;
 
 
 import com.beyond.pochaon.ordering.dto.OrderQueueDto;
-//import com.beyond.Pocha_On.ordering.dtos.CancelledOrderResDto;
 import com.beyond.pochaon.ordering.service.OrderingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

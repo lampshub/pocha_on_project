@@ -1,10 +1,7 @@
 package com.beyond.pochaon.menu.service;
 
 import com.beyond.pochaon.menu.domain.Category;
-import com.beyond.pochaon.menu.domain.Menu;
 import com.beyond.pochaon.menu.dtos.CategoryReqDto;
-import com.beyond.pochaon.menu.dtos.MenuCreateReqDto;
-import com.beyond.pochaon.menu.dtos.MenuUpdateReqDto;
 import com.beyond.pochaon.menu.repository.CategoryRepository;
 import com.beyond.pochaon.owner.domain.Owner;
 import com.beyond.pochaon.owner.repository.OwnerRepository;

@@ -7,11 +7,9 @@ import com.beyond.pochaon.chat.dtos.ChatRoomDto;
 import com.beyond.pochaon.chat.service.ChatService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 

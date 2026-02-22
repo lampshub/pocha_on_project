@@ -19,7 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.YearMonth;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -86,6 +85,12 @@ public class StoreService {
                 jwtTokenProvider.createStoreAccessToken(owner, storeId);
 
         return new StoreTokenDto(storeAccessToken);
+    }
+
+    @Transactional(readOnly = true)
+    public StoreTimeResDto getStoreHours(Long storeId){
+        Store store = storeRepository.findById(storeId).orElseThrow(()-> new IllegalStateException("Store not found"));
+        return new StoreTimeResDto(store.getStoreOpenAt(), store.getStoreCloseAt());
     }
 
     @Transactional

@@ -33,28 +33,28 @@ public class StompHandler implements ChannelInterceptor {
 
 //            stage값 검증(table, owner)
                 String stage = claims.get("stage", String.class);
-                if (!"TABLE".equals(stage) && !"OWNER".equals(stage)) {
-                    throw new IllegalArgumentException("허용되지 않은 사용자 입니다");
-                }
-                accessor.getSessionAttributes().put("stage", stage);
-//          테이블 검증
+                String role = claims.get("role",String.class);
+
                 if ("TABLE".equals(stage)) {
                     Number tableNum = claims.get("tableNum", Number.class);
                     if (tableNum == null) {
                         throw new IllegalArgumentException("토큰 내 존재하지 않는 table번호 입니다");
                     }
+                    accessor.getSessionAttributes().put("stage", "TABLE");
                     accessor.getSessionAttributes().put("tableNum", tableNum.longValue());
-                }
-//                매장 검증
-                if ("OWNER".equals(stage)) {
+                }else if("STORE".equals(stage) && "OWNER".equals(role)) {
                     Number storeId = claims.get("storeId", Number.class);
-
                     if (storeId == null) {
                         throw new IllegalArgumentException("토큰 내 존재하지 않는 storeId입니다");
                     }
+                    accessor.getSessionAttributes().put("stage", "STORE");
                     accessor.getSessionAttributes().put("storeId", storeId.longValue());
+                }else{
+                    throw new IllegalArgumentException("허용되지 않은 사용자 입니다");
                 }
             }
+
+
 //            subscribe destination 권한검증
             if (StompCommand.SUBSCRIBE.equals(accessor.getCommand())) {
                 String destination = accessor.getDestination();
@@ -65,7 +65,7 @@ public class StompHandler implements ChannelInterceptor {
                 String stage = (String) accessor.getSessionAttributes().get("stage");
 
                 if (destination.startsWith("/topic/order/")) {
-                    if (!"OWNER".equals(stage)) {
+                    if (!"STORE".equals(stage)) {
                         throw new IllegalArgumentException("점주에게만 구독권한이 있습니다");
                     }
                     Long myStoreId = (Long) accessor.getSessionAttributes().get("storeId");

@@ -31,7 +31,7 @@ public class StompWebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Qualifier("order")
     public void registerStompEndpoints(StompEndpointRegistry registry){
         registry.addEndpoint("/connect")
-                .setAllowedOrigins("*")
+                .setAllowedOrigins("http://localhost:3002")
                 .withSockJS();
     }
 
@@ -39,7 +39,7 @@ public class StompWebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Qualifier("order")
     public void configureMessageBroker(MessageBrokerRegistry registry){
         registry.enableSimpleBroker("/topic");
-        // registry.setApplicationDestinationPrefixes("/app"); ← 필요하면만 활성화
+        registry.setApplicationDestinationPrefixes("/app");
     }
 
 

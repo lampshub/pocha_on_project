@@ -1,14 +1,14 @@
 package com.beyond.pochaon.common.web;
 
-import com.beyond.pochaon.customerorder.dto.OrderCreateDto;
 import com.beyond.pochaon.present.dto.OwnerEventDto;
-import com.beyond.pochaon.present.dto.PresentOwnerDto;
 import com.beyond.pochaon.present.dto.PresentReceiverDto;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 public class WebPublisher {
 
@@ -28,7 +28,11 @@ public class WebPublisher {
     }
 
     public void publish(OwnerEventDto eventDto) {
+        log.info("REDIS PUBLISH 성공 channel=owner-event, type={}, storeId={}",
+                eventDto.getEventType(), eventDto.getStoreId());
         redisTemplate.convertAndSend(orderTopic.getTopic(), eventDto); //t-order
+
+
     }
 
     public void tablePublish(PresentReceiverDto receiverDto) {

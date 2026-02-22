@@ -26,6 +26,7 @@ public class Owner extends BaseTimeEntity {
     private String password;
     private String phoneNumber;
     private String ownerName;
+    @Column(unique = true)
     private String ownerEmail;
 
     @Builder.Default

@@ -6,9 +6,10 @@ import com.beyond.pochaon.present.dto.OwnerEventDto;
 import com.beyond.pochaon.present.dto.PresentOwnerDto;
 import com.beyond.pochaon.present.dto.PresentReceiverDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
-
+@Slf4j
 @Component
 
 public class WebSubscriber {
@@ -23,15 +24,20 @@ public class WebSubscriber {
 
     public void onMessage(OwnerEventDto eventDto) {
 // ->redis ->websocket
+        log.info("[REDIS-SUB] Redis 채널 이벤트 수신 type={}, storeId={}", eventDto.getEventType(), eventDto.getStoreId());
 
         if("ORDER".equals(eventDto.getEventType())){
+
             OrderCreateDto createDto= objectMapper.convertValue(eventDto.getPayload(),OrderCreateDto.class);
             messagingTemplate.convertAndSend("/topic/order/" + eventDto.getStoreId(), createDto);
+            log.info("[WS-PUBLISH] 점주일반주문발행 /topic/order/{}", eventDto.getStoreId());
 
         }else if("PRESENT".equals(eventDto.getEventType())){
+
             PresentOwnerDto presentOwnerDto = objectMapper.convertValue(eventDto.getPayload(),PresentOwnerDto.class);
             messagingTemplate.convertAndSend("/topic/order/"+ eventDto.getStoreId(), presentOwnerDto);
-    }
+            log.info("[WS-PUBLISH] 점주선물주분발행 /topic/order/{}", eventDto.getStoreId());
+        }
     }
 
     public void onTableMessage(PresentReceiverDto receiverDto){

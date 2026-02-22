@@ -2,14 +2,16 @@ package com.beyond.pochaon.cart.service;
 
 
 import com.beyond.pochaon.cart.domain.RedisCartItem;
-import com.beyond.pochaon.cart.dto.cart_dto.*;
+import com.beyond.pochaon.cart.dto.cart_dto.CartCreateDto;
+import com.beyond.pochaon.cart.dto.cart_dto.CartDto;
+import com.beyond.pochaon.cart.dto.cart_dto.CartLineDeleteDto;
+import com.beyond.pochaon.cart.dto.cart_dto.CartUpdateDto;
 import com.beyond.pochaon.menu.domain.Menu;
 import com.beyond.pochaon.menu.domain.MenuOption;
 import com.beyond.pochaon.menu.domain.MenuOptionDetail;
 import com.beyond.pochaon.menu.repository.MenuOptionDetailRepository;
 import com.beyond.pochaon.menu.repository.MenuOptionRepository;
 import com.beyond.pochaon.menu.repository.MenuRepository;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -227,6 +229,7 @@ public class CartService {
                     .menuId(item.getMenuId())
                     .menuName(item.getMenuName())
                     .lineTotalPrice(lineTotalPrice)
+                    .fieldKey(fieldKey)
                     .menuQuantity(item.getQuantity())
                     .cartOptionDtoList(optionDtoList) //옵셔 dto리스트
                     .build();

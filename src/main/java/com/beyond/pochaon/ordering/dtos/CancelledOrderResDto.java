@@ -1,4 +1,4 @@
-//package com.beyond.MyoungJin.ordering.dtos;
+package com.beyond.pochaon.ordering.dtos;//package com.beyond.MyoungJin.ordering.dtos;
 //
 //import com.beyond.MyoungJin.ordering.domain.OrderStatus;
 //import com.beyond.MyoungJin.ordering.domain.Ordering;

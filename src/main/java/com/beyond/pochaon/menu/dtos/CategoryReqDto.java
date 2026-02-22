@@ -1,7 +1,6 @@
 package com.beyond.pochaon.menu.dtos;
 
 import com.beyond.pochaon.menu.domain.Category;
-import com.beyond.pochaon.menu.domain.Menu;
 import com.beyond.pochaon.store.domain.Store;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

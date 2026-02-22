@@ -39,10 +39,10 @@ public class CustomerTableService {
 
 
     //    웹소켓으로 테이블 상태 업데이트 전송
-    public void sendTableStatusUpdate(Long storeId, Long tableId) {
-        CustomerTableStatusListDto statusListDto = getTableStatus(storeId, tableId);
-        simpMessagingTemplate.convertAndSend("/topic/table-status/" + storeId, statusListDto);
-    }
+//    public void sendTableStatusUpdate(Long storeId, Long tableId) {
+//        CustomerTableStatusListDto statusListDto = getTableStatus(storeId, tableId);
+//        simpMessagingTemplate.convertAndSend("/topic/table-status/" + storeId, statusListDto);
+//    }
 
     /*
 매장의 전체 테이블 현황 조회 =================================
@@ -91,13 +91,13 @@ public class CustomerTableService {
     /*
     테이블 선택 후 토큰 발급
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public TableTokenDto selectTable(
             String stage,
             Long storeId,
             TableSelectDto dto
     ) {
-        CustomerTable table = customerTableRepository.findByTableNum( dto.getTableNum()).orElseThrow(() -> new EntityNotFoundException("없는 테이블입니다"));
+        CustomerTable table = customerTableRepository.findByTableNum(dto.getTableNum()).orElseThrow(() -> new EntityNotFoundException("없는 테이블입니다"));
         //  STORE 토큰만 허용
         if (!"STORE".equals(stage)) {
             throw new AccessDeniedException("STORE 토큰이 필요합니다.");
@@ -114,6 +114,8 @@ public class CustomerTableService {
                         dto.getTableNum(),
                         table.getCustomerTableId()
                 );
+
+        table.setTableStatusUsing();
 
         return new TableTokenDto(tableToken);
     }
@@ -145,7 +147,7 @@ public class CustomerTableService {
                 .toList();
     }
 
-// 점주 설정관리 화면에서 테이블 관리
+    // 점주 설정관리 화면에서 테이블 관리
     public void create(Long storeId, TableCreateReqDto dto) {
         Store store = storeRepository.findById(storeId).orElseThrow(() -> new EntityNotFoundException("없는 매장/ customertable_ser-create"));
 //
@@ -165,9 +167,10 @@ public class CustomerTableService {
 
     public void delete(Long storeId, Long customerTableId) {
         Store store = storeRepository.findById(storeId).orElseThrow(() -> new EntityNotFoundException("없는 매장"));
-        CustomerTable customerTable = customerTableRepository.findById(customerTableId).orElseThrow(()-> new EntityNotFoundException("없는 테이블"));
+        CustomerTable customerTable = customerTableRepository.findById(customerTableId).orElseThrow(() -> new EntityNotFoundException("없는 테이블"));
         customerTableRepository.delete(customerTable);
     }
+
     public List<TableResToOwnerDto> getTables(Long storeId) {
         Store store = storeRepository.findById(storeId).orElseThrow(() -> new EntityNotFoundException("없는 매장"));
         return customerTableRepository.findByStoreId(storeId).stream()
@@ -175,6 +178,11 @@ public class CustomerTableService {
                         c_table.getCustomerTableId(),
                         c_table.getTableNum()))
                 .toList();
+    }
+
+    public void tableRollBack(int tableNum) {
+        CustomerTable customerTable = customerTableRepository.findByTableNum(tableNum).orElseThrow(() -> new EntityNotFoundException("없는 테이블/ customerTable_ser_tableRollBack"));
+        customerTable.setTableStatusStandBy();
     }
 }
 

@@ -37,13 +37,17 @@ public class CustomerTable extends BaseTimeEntity {
     private TableStatus tableStatus = TableStatus.STANDBY;
 
 
-    public void assignGroup(UUID groupId) {
-        this.groupId = groupId;
+    public void setTableStatusUsing() {
         this.tableStatus = TableStatus.USING;
+    }
+
+    public void setTableStatusStandBy() {
+        this.tableStatus = TableStatus.STANDBY;
     }
 
     public void clearTable() {
         this.groupId = null;
         this.tableStatus = TableStatus.STANDBY;
     }
+
 }

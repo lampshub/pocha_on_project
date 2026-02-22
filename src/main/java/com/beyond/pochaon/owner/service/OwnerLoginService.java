@@ -8,8 +8,6 @@ import com.beyond.pochaon.owner.dtos.OwnerCreateDto;
 import com.beyond.pochaon.owner.dtos.TokenDto;
 import com.beyond.pochaon.owner.repository.OwnerRepository;
 import jakarta.persistence.EntityNotFoundException;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -18,13 +16,11 @@ public class OwnerLoginService {
     private final OwnerRepository ownerRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
-    private final RedisTemplate redisTemplate;
 
-    public OwnerLoginService(OwnerRepository ownerRepository, PasswordEncoder passwordEncoder, JwtTokenProvider jwtTokenProvider, @Qualifier("rtInventory")RedisTemplate redisTemplate) {
+    public OwnerLoginService(OwnerRepository ownerRepository, PasswordEncoder passwordEncoder, JwtTokenProvider jwtTokenProvider) {
         this.ownerRepository = ownerRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenProvider = jwtTokenProvider;
-        this.redisTemplate = redisTemplate;
     }
 
     public TokenDto baseLogin(BaseLoginDto dto) {
@@ -40,11 +36,12 @@ public class OwnerLoginService {
     }
 
     public void ownerSave(OwnerCreateDto dto) {
-        Owner owner = null;
         if (ownerRepository.findByOwnerEmail(dto.getOwnerEmail()).isPresent()) {
-            throw new IllegalArgumentException("이미 가입된 계정입니다.");
+            throw new IllegalArgumentException("이미 사용중인 이메일입니다.");
+        } else if (ownerRepository.existsByBusinessRegistrationNumber(dto.getBusinessRegistrationNumber())){
+            throw new IllegalArgumentException("이미 가입된 사업장입니다.");
         } else {
-            owner = ownerRepository.save(dto.toEntity(passwordEncoder.encode(dto.getPassword())));
+            ownerRepository.save(dto.toEntity(passwordEncoder.encode(dto.getPassword())));
         }
     }
 

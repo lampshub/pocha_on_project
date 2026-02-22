@@ -1,19 +1,12 @@
 package com.beyond.pochaon.common.init;
 
-import com.beyond.pochaon.customerTable.domain.CustomerTable;
-import com.beyond.pochaon.customerTable.domain.TableStatus;
 import com.beyond.pochaon.customerTable.repository.CustomerTableRepository;
-import com.beyond.pochaon.owner.domain.Owner;
-import com.beyond.pochaon.owner.domain.Role;
 import com.beyond.pochaon.owner.repository.OwnerRepository;
-import com.beyond.pochaon.store.domain.Store;
 import com.beyond.pochaon.store.repository.StoreRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalTime;
 
 @Component
 @Transactional

@@ -4,7 +4,6 @@ package com.beyond.pochaon.chat.controller;
 import com.beyond.pochaon.chat.domain.ChatMessage;
 import com.beyond.pochaon.chat.dtos.ChatMessageDto;
 import com.beyond.pochaon.chat.service.ChatService;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
