@@ -3,7 +3,6 @@ package com.beyond.pochaon.ordering.repository;
 import com.beyond.pochaon.customerTable.domain.CustomerTable;
 import com.beyond.pochaon.ordering.domain.OrderStatus;
 import com.beyond.pochaon.ordering.domain.Ordering;
-import com.beyond.pochaon.pay.domain.PaymentState;
 import io.lettuce.core.dynamic.annotation.Param;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
