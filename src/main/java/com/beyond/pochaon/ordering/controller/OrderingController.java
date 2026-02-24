@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/ordering")
@@ -21,7 +22,8 @@ public class OrderingController {
     }
 
 //    @GetMapping("/cancelled")
-////    @PreAuthorize("hasRole('ADMIN')")   //점주만 확인할수있음
+
+    /// /    @PreAuthorize("hasRole('ADMIN')")   //점주만 확인할수있음
 //    public List<CancelledOrderResDto> cancelledList() {
 //
 //        return orderingService.cancelledList()
@@ -30,7 +32,7 @@ public class OrderingController {
 //                .toList();
 //    }
 
-    //    점주 화면 로드시 standBy 주문 조회
+    //     화면 로드시 standBy 주문 조회
     @GetMapping("/queue")
     public ResponseEntity<List<OrderQueueDto>> getOrderQueue(@RequestAttribute Long storeId) {
         List<OrderQueueDto> queueDtos = orderingService.getOrderQueue(storeId);
@@ -38,14 +40,16 @@ public class OrderingController {
     }
 
     //    점주가 조리완료 버튼 클릭 -> 하단 주문내역에서 사라짐
-    @PostMapping("/{orderingId}/done")
+    @PostMapping("/done/{orderingId}")
     public ResponseEntity<OrderQueueDto> completeOrder(@PathVariable Long orderingId, @RequestAttribute Long storeId) {
         OrderQueueDto dto = orderingService.completeOrder(orderingId, storeId);
         return ResponseEntity.ok(dto);
     }
 
-
-
+    @GetMapping("/total")
+    public ResponseEntity<?> getGroupIdTotal(@RequestParam UUID groupId) {
+        return ResponseEntity.ok(orderingService.getGroupIdTotal(groupId));
+    }
 
 
 }

@@ -6,7 +6,7 @@ import com.beyond.pochaon.ordering.domain.OrderStatus;
 import com.beyond.pochaon.ordering.domain.Ordering;
 import com.beyond.pochaon.ordering.domain.OrderingDetail;
 import com.beyond.pochaon.ordering.domain.OrderingDetailOption;
-import com.beyond.pochaon.pay.domain.PaymentState;
+import com.beyond.pochaon.payment.entity.PaymentStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -48,7 +48,7 @@ public class                                                                    
         private Long orderingId;
         private int totalPrice;
         private OrderStatus orderStatus;
-        private PaymentState paymentState;
+        private PaymentStatus paymentState;
         private List<OrderingOption> orderingOptionList;
 
         public static OrderingList fromEntity(Ordering ordering) {

@@ -18,7 +18,7 @@ public class PresentController {
 
 
     //    1. 1:1 선물하기
-    @PostMapping
+    @PostMapping("/send")
     public void sendPresent(@RequestBody PresentCreateDto createDto){
     presentService.sendPresent(createDto);
     }

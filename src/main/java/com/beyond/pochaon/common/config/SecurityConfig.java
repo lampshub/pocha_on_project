@@ -66,6 +66,7 @@ public class SecurityConfig {
                         // WebSocket 관련 모든 경로 허용
                         a.requestMatchers("/ws-stomp/**").permitAll().requestMatchers(
                                         "/owner/baseLogin",
+                                        "/owner/verify-password",
                                         "/test/**",
                                         "/ws-stomp/**",
                                         "/topic/**",
@@ -76,10 +77,8 @@ public class SecurityConfig {
                                         "/owner/create",
                                         "/owner/refresh",
                                         "/customertable/tablestatuslist",
-                                        "/pay/kakao/success",
-                                        "/pay/kakao/fail",
-                                        "/pay/kakao/cancel",
-
+                                       "/ordering/total",
+                                        "/api/payment/**",
                                         "/auth/email/send",
                                         "/auth/email/verify",
                                         "/auth/password/reset",
@@ -88,7 +87,8 @@ public class SecurityConfig {
 
                                         "/customertable/**",
                                         "/store/detail/**",
-                                        "/ws-stomp/**"
+                                        "/ws-stomp/**",
+                                        "/connect/**"
                                 ).permitAll()
                                 .anyRequest().authenticated()
                 )

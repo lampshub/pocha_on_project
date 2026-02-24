@@ -29,7 +29,7 @@ public class SseAlramService implements MessageListener {
         this.redisTemplate = redisTemplate;
     }
 
-//    특정 테이블에 메시지 전송. emitter가 있으면 직접 전송 없으면 pub/sub
+//    점주 -> 특정 테이블에 메시지 전송. emitter가 있으면 직접 전송 없으면 pub/sub
     public void sendMessage(String storeId, String tableNum, String message) {
         SseEmitter sseEmitter = sseEmitterRegistry.getEmitter(storeId, tableNum);
         SseMessageDto dto = SseMessageDto.builder()

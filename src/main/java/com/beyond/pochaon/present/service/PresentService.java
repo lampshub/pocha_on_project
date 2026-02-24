@@ -9,10 +9,7 @@ import com.beyond.pochaon.menu.repository.MenuRepository;
 import com.beyond.pochaon.ordering.domain.Ordering;
 import com.beyond.pochaon.ordering.domain.OrderingDetail;
 import com.beyond.pochaon.ordering.repository.OrderingRepository;
-import com.beyond.pochaon.present.dto.OwnerEventDto;
-import com.beyond.pochaon.present.dto.PresentCreateDto;
-import com.beyond.pochaon.present.dto.PresentOwnerDto;
-import com.beyond.pochaon.present.dto.PresentReceiverDto;
+import com.beyond.pochaon.present.dto.*;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -131,7 +128,34 @@ public class PresentService {
                 .build();
         ordering.getOrderDetail().add(detail);
 
-        orderingRepository.save(ordering);
+//      PresentQue조립
+        Ordering QueOrdering =orderingRepository.save(ordering);
+
+        PresentQueueDto.PresentDetail presentDetail = PresentQueueDto.PresentDetail.builder()
+                .menuName(menu.getMenuName())
+                .quantity(createDto.getMenuQuantity())
+                .build();
+
+        List<PresentQueueDto.PresentDetail>detailList= new ArrayList<>();
+        detailList.add(presentDetail);
+
+        PresentQueueDto queueDto= PresentQueueDto.builder()
+                .orderingId(QueOrdering.getId())
+                .senderTableId(sender.getCustomerTableId())
+                .receiverTableId(receiver.getCustomerTableId())
+                .receiverTableNum(receiver.getTableNum())
+                .totalPrice(totalPrice)
+                .orderStatus(QueOrdering.getOrderStatus())
+                .orderingDetailInfos(detailList)
+                .build();
+
+        OwnerEventDto queueEventEto = OwnerEventDto.builder()
+                .eventType("PRESENT")
+                .storeId(sender.getStore().getId())
+                .payload(queueDto)
+                .build();
+        webPublisher.publish(queueEventEto);
+
 
 //    점주에게 보내기 db->ownerDto
 
@@ -144,10 +168,12 @@ public class PresentService {
         menuDtoList.add(menuDto);
 
         PresentOwnerDto ownerDto =PresentOwnerDto.builder()
+                .orderingId(QueOrdering.getId())
                 .senderTableNum(sender.getTableNum())
                 .groupId(groupId)
                 .receiverTableNum( receiver.getTableNum())
                 .menuDtoList(menuDtoList)
+                .type("PRESENT")
                 .build();
 
         OwnerEventDto eventDto = OwnerEventDto.builder()

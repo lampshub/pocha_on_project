@@ -13,6 +13,7 @@ import java.util.List;
 @Data
 @Builder
 public class CartDto {
+    @Builder.Default
     private List<CartDetailDto> cartDetailDto= new ArrayList<>();
     private int CartTotalPrice; //+=linePrice
 
@@ -26,6 +27,7 @@ public class CartDto {
         private String fieldKey;
         private int lineTotalPrice; //unitPrice +수량
         private int menuQuantity;
+        @Builder.Default
         private List<CartOptionDto> cartOptionDtoList= new ArrayList<>();
     }
     @AllArgsConstructor
@@ -34,6 +36,7 @@ public class CartDto {
     @Builder
     public static class CartOptionDto {
         private String optionName;
+        @Builder.Default
         private List<String> optionDetailNameList= new ArrayList<>();
 
     }

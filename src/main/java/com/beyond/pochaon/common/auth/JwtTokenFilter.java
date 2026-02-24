@@ -39,6 +39,8 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             "/customertable/tablerollback",
             "/customertable/tablestatuslist",
             "/owner/business/verify",
+            "/api/payment/**",
+            "/ordering/total",
             "/connect"
     );
 
@@ -52,7 +54,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
-log.info("option요청 통과 로그: {}", request.getRequestURI());
+            log.info("option요청 통과 로그: {}", request.getRequestURI());
             return true;
         }
         String uri = request.getRequestURI();

@@ -50,4 +50,8 @@ public class CustomerTable extends BaseTimeEntity {
         this.tableStatus = TableStatus.STANDBY;
     }
 
+    public void updateStatus(TableStatus status) {
+        this.tableStatus = status;
+    }
+
 }

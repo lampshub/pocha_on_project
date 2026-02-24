@@ -34,7 +34,7 @@ public class SseController {
     }
 
 //Sse연결 api 토큰의 stage를 통해 점주/테이블을 구분해서 각각의 Map에 등록
-    @GetMapping("connect")
+    @GetMapping("/connect")
     public SseEmitter connect(@RequestHeader("Authorization") String bearerToken) throws IOException {
         log.info("===connect start===");
         String token = bearerToken.substring(7);
@@ -52,7 +52,7 @@ public class SseController {
         return sseEmitter;
     }
 
-    @GetMapping("disstaffcall")
+    @GetMapping("/disstaffcall")
     public void disconnect(@RequestHeader("Authorization") String bearerToken) {
         log.info("===disconnect===");
         String token = bearerToken.substring(7);
@@ -65,7 +65,7 @@ public class SseController {
     //    테이블에서 직원호출 api
     @PostMapping("/staffcall")
     public ResponseEntity<?> callStaff(@RequestHeader("Authorization") String bearer) {
-        String token = bearer.substring(7);
+        String token = bearer.substring(7); //bearer 는 storeToken ?
         Long storeId = jwtTokenProvider.getStoreId(token);
         Integer tableNum = jwtTokenProvider.getTableNum(token);
         sseAlramService.sendToOwner(String.valueOf(storeId), String.valueOf(tableNum), tableNum + "번 테이블에서 직원을 호출했습니다.");

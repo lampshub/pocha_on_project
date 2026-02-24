@@ -7,6 +7,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import jakarta.annotation.PostConstruct;
 import jakarta.persistence.EntityNotFoundException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,6 +21,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+@Slf4j
 @Component
 public class JwtTokenProvider {
 
@@ -131,9 +133,11 @@ public class JwtTokenProvider {
     }
 
     // 테이블 토큰
-    public String createTableToken(Long storeId, int tableNum, Long customerTableId) {
+    public String createTableToken(String ownerEmail,Long storeId, int tableNum, Long customerTableId) {
 
-        Claims claims = Jwts.claims();
+        Claims claims = Jwts.claims()
+                .setSubject("table-" + tableNum)
+                .setSubject(ownerEmail);
 
         claims.put("stage", "TABLE");
         claims.put("role", "TABLE");
@@ -200,8 +204,14 @@ public class JwtTokenProvider {
         Owner owner = ownerRepository.findByOwnerEmail(email)
                 .orElseThrow(() -> new EntityNotFoundException("Owner not found"));
 
+        String cleanedInputRt = refreshToken.replace("Bearer ", "").trim();
         // Redis 토큰 검증
         String redisRt = redisTemplate.opsForValue().get(email);
+
+
+        // 디버깅 로그 추가: 공백이나 "Bearer" 문자열이 포함되어 있는지 확인
+        log.info("Cleaned Input RT: [" + cleanedInputRt + "]");
+        log.info("Redis RT: [" + redisRt + "]");
 
         if (redisRt == null)
             throw new IllegalArgumentException("이미 사용된 RefreshToken");

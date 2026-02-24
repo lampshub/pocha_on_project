@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -47,12 +48,16 @@ public class CustomerTableController {
     }
 
     @PostMapping("/select")
-    public TableTokenDto selectTable(
-            @RequestAttribute String stage,
-            @RequestAttribute Long storeId,
-            @RequestBody TableSelectDto dto
-    ) {
-        return customerTableService.selectTable(stage, storeId, dto);
+    public ResponseEntity<?> selectTable(
+            Authentication authentication, // 인증 객체 주입
+            @RequestAttribute("stage") String stage,
+            @RequestAttribute("storeId") Long storeId,
+            @RequestBody TableSelectDto dto) {
+
+        String email = authentication.getName(); // 현재 STORE 토큰에 있는 email 추출
+        TableTokenDto tokenDto = customerTableService.selectTable(email, stage, storeId, dto);
+
+        return ResponseEntity.ok(tokenDto);
     }
 
     @GetMapping("/available")

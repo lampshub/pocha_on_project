@@ -93,30 +93,30 @@ public class CustomerTableService {
      */
     @Transactional
     public TableTokenDto selectTable(
+            String email, // email 파라미터 추가
             String stage,
             Long storeId,
             TableSelectDto dto
     ) {
-        CustomerTable table = customerTableRepository.findByTableNum(dto.getTableNum()).orElseThrow(() -> new EntityNotFoundException("없는 테이블입니다"));
-        //  STORE 토큰만 허용
+        CustomerTable table = customerTableRepository.findByTableNum(dto.getTableNum())
+                .orElseThrow(() -> new EntityNotFoundException("없는 테이블입니다"));
+
         if (!"STORE".equals(stage)) {
             throw new AccessDeniedException("STORE 토큰이 필요합니다.");
         }
 
-        // 매장 존재 여부 검증
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new EntityNotFoundException("Store not found"));
 
-        // TableToken 발급
-        String tableToken =
-                jwtTokenProvider.createTableToken(
-                        storeId,
-                        dto.getTableNum(),
-                        table.getCustomerTableId()
-                );
+        // 수정한 createTableToken 호출 (email 전달)
+        String tableToken = jwtTokenProvider.createTableToken(
+                email,
+                storeId,
+                dto.getTableNum(),
+                table.getCustomerTableId()
+        );
 
         table.setTableStatusUsing();
-
         return new TableTokenDto(tableToken);
     }
 

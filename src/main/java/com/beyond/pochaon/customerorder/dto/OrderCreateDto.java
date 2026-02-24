@@ -14,9 +14,8 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 public class OrderCreateDto {
-
     private Long orderingId;
-    private int tableNumber;
+    private int tableNum;
     private UUID idempotencyKey;
     private UUID groupId;
     @Builder.Default

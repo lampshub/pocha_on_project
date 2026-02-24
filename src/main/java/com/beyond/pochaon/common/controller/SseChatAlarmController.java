@@ -55,6 +55,16 @@ public class SseChatAlarmController {
         sseChatAlarmService.setToggleAlarmStatus(storeId, tableNum, on);
     }
 
-
+////테스트용
+//    @GetMapping("/test")
+//    public String testAlarm(
+//            @RequestParam Long storeId,
+//            @RequestParam int senderTable,
+//            @RequestParam int receiverTable,
+//            @RequestParam String message
+//    ) {
+//        sseChatAlarmService.sendChatAlarm(storeId, senderTable, receiverTable, message);
+//        return "알람 전송 완료";
+//    }
 
 }

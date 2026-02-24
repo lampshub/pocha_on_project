@@ -136,16 +136,24 @@ public class ChatService {
     // 메시지 조회
     // ===============================
     public List<ChatMessage> getMessages(Long chatRoomId) {
-
         String key = MESSAGE_LIST_KEY.formatted(chatRoomId);
-
         List<Object> cached = chatRedisTemplate.opsForList().range(key, 0, -1);
 
-        if (cached == null || cached.isEmpty())
+        if (cached == null || cached.isEmpty()) {
             return Collections.emptyList();
+        }
 
         return cached.stream()
-                .map(obj -> (ChatMessage) obj)
+                .map(obj -> {
+                    try {
+                        // Object를 ChatMessage 객체로 안전하게 변환
+                        return objectMapper.convertValue(obj, ChatMessage.class);
+                    } catch (Exception e) {
+                        log.error("메시지 변환 에러: {}", e.getMessage());
+                        return null;
+                    }
+                })
+                .filter(java.util.Objects::nonNull) // 변환 실패한 데이터 제외
                 .collect(Collectors.toList());
     }
 

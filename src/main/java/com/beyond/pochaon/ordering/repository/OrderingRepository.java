@@ -3,6 +3,7 @@ package com.beyond.pochaon.ordering.repository;
 import com.beyond.pochaon.customerTable.domain.CustomerTable;
 import com.beyond.pochaon.ordering.domain.OrderStatus;
 import com.beyond.pochaon.ordering.domain.Ordering;
+import com.beyond.pochaon.payment.entity.PaymentStatus;
 import io.lettuce.core.dynamic.annotation.Param;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -39,7 +40,7 @@ public interface OrderingRepository extends JpaRepository<Ordering, Long> {
 
     Ordering findByIdempotencyKey(UUID idempotencyKey);
 
-    List<Ordering> findByGroupIdAndPaymentState(UUID groupId, PaymentState paymentState);
+    List<Ordering> findByGroupIdAndPaymentState(UUID groupId, PaymentStatus paymentState);
 
     //    정산용
 //    특정 시간 내에 승인된 결제와 연관된 주문들을 조회
@@ -54,4 +55,7 @@ public interface OrderingRepository extends JpaRepository<Ordering, Long> {
             @Param("storeId") Long storeId,
             @Param("openedAt") LocalDateTime openedAt,
             @Param("closedAt") LocalDateTime closedAt);
+
+    @Query("SELECT COALESCE(SUM(o.totalPrice), 0) FROM Ordering o WHERE o.groupId = :groupId")
+    int sumTotalPriceByGroupId(@Param("groupId") UUID groupId);
 }

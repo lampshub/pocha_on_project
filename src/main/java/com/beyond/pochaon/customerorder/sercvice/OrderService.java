@@ -435,7 +435,7 @@ public class OrderService {
 
         return OrderCreateDto.builder()
                 .orderingId(ordering.getId())
-                .tableNumber(customerTable.getTableNum())
+                .tableNum(customerTable.getTableNum())
                 .groupId(ordering.getGroupId())
                 .idempotencyKey(ordering.getIdempotencyKey())
                 .webMenuList(webMenuList)

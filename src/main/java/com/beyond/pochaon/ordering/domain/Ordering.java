@@ -2,7 +2,7 @@ package com.beyond.pochaon.ordering.domain;
 
 import com.beyond.pochaon.common.BaseTimeEntity;
 import com.beyond.pochaon.customerTable.domain.CustomerTable;
-import com.beyond.pochaon.pay.domain.PaymentState;
+import com.beyond.pochaon.payment.entity.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -33,7 +33,7 @@ public class Ordering extends BaseTimeEntity {
 
     @Enumerated(EnumType.STRING)
     @Builder.Default
-    private PaymentState paymentState = PaymentState.PENDING;
+    private PaymentStatus paymentState = PaymentStatus.READY;
 
     //    멱등성 추가
     @Column(name = "idempotency_key", columnDefinition = "BINARY(16)", nullable = false, unique = true)
@@ -52,7 +52,7 @@ public class Ordering extends BaseTimeEntity {
     @Builder.Default
     private List<OrderingDetail> orderDetail = new ArrayList<>();
 
-    public void updatePaymentState(PaymentState paymentState) {
+    public void updatePaymentState(PaymentStatus paymentState) {
         this.paymentState = paymentState;
     }
 

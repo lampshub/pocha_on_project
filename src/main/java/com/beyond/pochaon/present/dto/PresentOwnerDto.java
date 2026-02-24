@@ -14,7 +14,9 @@ import java.util.UUID;
 @NoArgsConstructor
 @Data
 public class PresentOwnerDto {
+    private Long orderingId;
     private int senderTableNum;
+    private String type = "PRESENT";
     private UUID groupId;
     private int receiverTableNum;
     private List<MenuDto> menuDtoList;
