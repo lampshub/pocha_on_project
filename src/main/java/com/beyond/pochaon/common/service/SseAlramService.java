@@ -2,6 +2,7 @@ package com.beyond.pochaon.common.service;
 
 import com.beyond.pochaon.common.dtos.SseMessageDto;
 import com.beyond.pochaon.common.repository.SseEmitterRegistry;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.Nullable;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
+import java.util.Map;
 
 @Component
 @Slf4j
@@ -85,6 +87,33 @@ public class SseAlramService implements MessageListener {
             }
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+    public void sendToOwner2(String storeId, String eventName, Object data) {
+        SseEmitter emitter = sseEmitterRegistry.getOwnerEmitter(storeId); // 기존 구조에 맞게 수정
+        if (emitter == null) return;
+        try {
+            emitter.send(SseEmitter.event()
+                    .name(eventName)
+                    .data(data));
+        } catch (IOException e) {
+            sseEmitterRegistry.removeOwnerEmitter(storeId, emitter);
+        }
+    }
+
+
+    // SseAlramService.java
+    public void sendTableStatus(String storeId, int tableNum, String status) {
+        Map<String, Object> payload = Map.of(
+                "tableNum", tableNum,
+                "status", status
+        );
+        try {
+            // ObjectMapper로 명시적 JSON 직렬화
+            String json = objectMapper.writeValueAsString(payload);
+            sseEmitterRegistry.broadcastToOwner(storeId, "TABLE_STATUS", json);
+        } catch (JsonProcessingException e) {
+            log.error("TABLE_STATUS 직렬화 실패", e);
         }
     }
 }

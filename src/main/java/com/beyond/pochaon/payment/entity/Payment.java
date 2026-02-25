@@ -55,6 +55,9 @@ public class Payment extends BaseTimeEntity {
     //  결제 승인 시각(토스에서 주는 값)
     private LocalDateTime approveAt;
 
+    @Column(nullable = false)
+    private Long storeId;
+
     public void approve(String paymentKey, String method, LocalDateTime approveAt) {
         this.paymentKey = paymentKey;
         this.method = method;

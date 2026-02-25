@@ -1,5 +1,7 @@
 package com.beyond.pochaon.payment.service;
 
+import com.beyond.pochaon.ordering.domain.Ordering;
+import com.beyond.pochaon.ordering.repository.OrderingRepository;
 import com.beyond.pochaon.payment.dto.PaymentDto.ConfirmRequest;
 import com.beyond.pochaon.payment.dto.PaymentDto.ConfirmResponse;
 import com.beyond.pochaon.payment.dto.PaymentDto.OrderCreateRequest;
@@ -24,6 +26,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -35,6 +38,7 @@ public class PaymentService {
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
     private final RedisTemplate<String, String> redisTemplate;
+    private final OrderingRepository orderingRepository;
 
     // application.yml에서 주입
     @Value("${toss.payments.secret-key}")
@@ -43,11 +47,12 @@ public class PaymentService {
     private static final String TOSS_CONFIRM_URL = "https://api.tosspayments.com/v1/payments/confirm";
     private static final String TOSS_CANCEL_URL = "https://api.tosspayments.com/v1/payments/{paymentKey}/cancel";
 
-    public PaymentService(PaymentRepository paymentRepository, RestTemplate restTemplate, ObjectMapper objectMapper, @Qualifier("groupRedisTemplate") RedisTemplate<String, String> redisTemplate) {
+    public PaymentService(PaymentRepository paymentRepository, RestTemplate restTemplate, ObjectMapper objectMapper, @Qualifier("groupRedisTemplate") RedisTemplate<String, String> redisTemplate, OrderingRepository orderingRepository) {
         this.paymentRepository = paymentRepository;
         this.restTemplate = restTemplate;
         this.redisTemplate = redisTemplate;
         this.objectMapper = objectMapper;
+        this.orderingRepository = orderingRepository;
     }
 
     // ─── 1. 주문 생성 (결제 전 orderId 발급) ──────────────────
@@ -70,6 +75,7 @@ public class PaymentService {
                 .status(PaymentStatus.READY)
                 .payerType(payerType)
                 .tableNum(request.getTableNum())
+                .storeId(request.getStoreId())
                 .groupId(request.getGroupId())
                 .build();
 
@@ -131,6 +137,10 @@ public class PaymentService {
             // DB 업데이트
             payment.approve(paymentKey, method, approvedAt);
             paymentRepository.save(payment);
+            List<Ordering> orderings = orderingRepository.findByGroupId(UUID.fromString(payment.getGroupId()));
+            for (Ordering ordering : orderings) {
+                ordering.updatePaymentState(PaymentStatus.DONE);
+            }
 
             log.info("[Payment] 결제 승인 완료 - orderId: {}, paymentKey: {}, method: {}",
                     payment.getOrderId(), paymentKey, method);
@@ -144,7 +154,7 @@ public class PaymentService {
                     .orderName(payment.getOrderName())
                     .totalAmount(payment.getAmount())
                     .method(method)
-                    .status("DONE")
+                    .status(PaymentStatus.DONE)
                     .approvedAt(approvedAtStr)
                     .build();
 

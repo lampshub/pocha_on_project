@@ -13,4 +13,13 @@ public class SimpleSettlementDto {
     private int dayTotal;
     private int orderCount;
     private int averageOrderAmount;
+
+    // ── 신규 필드 ──
+    private int cancelCount;
+    private int refundAmount;
+    private int netSales;
+    private int cardSales;
+    private int cashSales;
+    private int transferSales;
+    private int tableUseCount;
 }

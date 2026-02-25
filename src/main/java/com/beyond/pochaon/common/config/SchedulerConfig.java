@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
@@ -19,7 +18,7 @@ public class SchedulerConfig {
 
     @Bean
     @Qualifier("taskSchedular")
-    public TaskScheduler taskScheduler() {
+    public ThreadPoolTaskScheduler taskScheduler() {
 //      ThreadPoolTaskScheduler 작업을 동시에 여러개 처리할 수 있게 해주는 클래스
         ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
 //        쓰레드 10개 할당한다는 의미

@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.BatchSize;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +31,7 @@ public class OrderingDetail {
 
     @OneToMany(mappedBy = "orderingDetail", fetch = FetchType.LAZY,cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
+    @BatchSize(size = 100)
     private List<OrderingDetailOption> orderingDetailOptions= new ArrayList<>();
 }
 

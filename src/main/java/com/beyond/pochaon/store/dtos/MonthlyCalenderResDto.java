@@ -15,5 +15,8 @@ public class MonthlyCalenderResDto {
 
     private int year;
     private int month;
-    private Map<Integer,Integer> dailySales;
+    private Map<Integer, Integer> dailySales;
+
+    private int orderCount;
+    private int cancelCount;
 }

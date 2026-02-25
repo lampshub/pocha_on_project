@@ -31,8 +31,6 @@ public class WebPublisher {
         log.info("REDIS PUBLISH 성공 channel=owner-event, type={}, storeId={}",
                 eventDto.getEventType(), eventDto.getStoreId());
         redisTemplate.convertAndSend(orderTopic.getTopic(), eventDto); //t-order
-
-
     }
 
     public void tablePublish(PresentReceiverDto receiverDto) {

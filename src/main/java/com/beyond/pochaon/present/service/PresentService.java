@@ -85,8 +85,13 @@ public class PresentService {
 
 
 //    테이블 조회 sender,receiver
-        CustomerTable sender = customerTableRepository.findByTableNum(createDto.getSenderTableNum()).orElseThrow(() -> new IllegalArgumentException("테이블 넘버가 없습니다"));
-        CustomerTable receiver = customerTableRepository.findByTableNum(createDto.getReceiverTableNum()).orElseThrow(() -> new IllegalArgumentException("테이블 넘버가 없습니다"));
+        CustomerTable sender = customerTableRepository
+                .findByTableNumAndStoreId(createDto.getSenderTableNum(), createDto.getStoreId())
+                .orElseThrow(() -> new IllegalArgumentException("테이블 넘버가 없습니다"));
+
+        CustomerTable receiver = customerTableRepository
+                .findByTableNumAndStoreId(createDto.getReceiverTableNum(), createDto.getStoreId())
+                .orElseThrow(() -> new IllegalArgumentException("테이블 넘버가 없습니다"));
 
 //        대상 테이블 손님 여부
         String receiverGroupKey = String.valueOf(receiver.getTableNum());

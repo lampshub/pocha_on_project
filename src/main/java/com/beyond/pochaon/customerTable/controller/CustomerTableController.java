@@ -10,6 +10,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/customertable")
@@ -53,11 +54,16 @@ public class CustomerTableController {
             @RequestAttribute("stage") String stage,
             @RequestAttribute("storeId") Long storeId,
             @RequestBody TableSelectDto dto) {
+        try {
+            String email = authentication.getName(); // 현재 STORE 토큰에 있는 email 추출
+            TableTokenDto tokenDto = customerTableService.selectTable(email, stage, storeId, dto);
 
-        String email = authentication.getName(); // 현재 STORE 토큰에 있는 email 추출
-        TableTokenDto tokenDto = customerTableService.selectTable(email, stage, storeId, dto);
-
-        return ResponseEntity.ok(tokenDto);
+            return ResponseEntity.ok(tokenDto);
+        } catch (IllegalStateException e) {
+            // 프론트에서 409로 구분하여 "이미 사용 중" 메시지 표시
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("message", e.getMessage()));
+        }
     }
 
     @GetMapping("/available")
@@ -96,8 +102,8 @@ public class CustomerTableController {
     }
 
     @PostMapping("/tablerollback")
-    public ResponseEntity<?> tableRollBack(@RequestBody TableSelectDto dto) {
-        customerTableService.tableRollBack(dto.getTableNum());
+    public ResponseEntity<?> tableRollBack(@RequestBody TableRollBackDto dto) {
+        customerTableService.tableRollBack(dto.getCustomerTableId());
         return ResponseEntity.ok().body("OK/상태변경");
     }
 

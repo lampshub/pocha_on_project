@@ -5,6 +5,7 @@ import com.beyond.pochaon.customerTable.domain.CustomerTable;
 import com.beyond.pochaon.payment.entity.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.BatchSize;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,6 +51,7 @@ public class Ordering extends BaseTimeEntity {
 
     @OneToMany(mappedBy = "ordering", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
+    @BatchSize(size = 100)
     private List<OrderingDetail> orderDetail = new ArrayList<>();
 
     public void updatePaymentState(PaymentStatus paymentState) {

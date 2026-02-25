@@ -1,12 +1,15 @@
 package com.beyond.pochaon.customerTable.service;
 
 import com.beyond.pochaon.common.auth.JwtTokenProvider;
+import com.beyond.pochaon.common.service.SseAlramService;
+import com.beyond.pochaon.common.web.WebPublisher;
 import com.beyond.pochaon.customerTable.domain.CustomerTable;
 import com.beyond.pochaon.customerTable.domain.TableStatus;
 import com.beyond.pochaon.customerTable.dtos.*;
 import com.beyond.pochaon.customerTable.repository.CustomerTableRepository;
 import com.beyond.pochaon.ordering.domain.Ordering;
 import com.beyond.pochaon.ordering.repository.OrderingRepository;
+import com.beyond.pochaon.present.dto.OwnerEventDto;
 import com.beyond.pochaon.store.domain.Store;
 import com.beyond.pochaon.store.repository.StoreRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -27,14 +30,18 @@ public class CustomerTableService {
     private final OrderingRepository orderingRepository;
     private final SimpMessagingTemplate simpMessagingTemplate;
     private final JwtTokenProvider jwtTokenProvider;
+    private final WebPublisher webPublisher;
+    private final SseAlramService sseAlramService;
 
     @Autowired
-    public CustomerTableService(CustomerTableRepository customerTableRepository, StoreRepository storeRepository, OrderingRepository orderingRepository, SimpMessagingTemplate simpMessagingTemplate, JwtTokenProvider jwtTokenProvider) {
+    public CustomerTableService(CustomerTableRepository customerTableRepository, StoreRepository storeRepository, OrderingRepository orderingRepository, SimpMessagingTemplate simpMessagingTemplate, JwtTokenProvider jwtTokenProvider, WebPublisher webPublisher, SseAlramService sseAlramService) {
         this.customerTableRepository = customerTableRepository;
         this.storeRepository = storeRepository;
         this.orderingRepository = orderingRepository;
         this.simpMessagingTemplate = simpMessagingTemplate;
         this.jwtTokenProvider = jwtTokenProvider;
+        this.webPublisher = webPublisher;
+        this.sseAlramService = sseAlramService;
     }
 
 
@@ -91,32 +98,37 @@ public class CustomerTableService {
     /*
     테이블 선택 후 토큰 발급
      */
-    @Transactional
-    public TableTokenDto selectTable(
-            String email, // email 파라미터 추가
-            String stage,
-            Long storeId,
-            TableSelectDto dto
-    ) {
-        CustomerTable table = customerTableRepository.findByTableNum(dto.getTableNum())
-                .orElseThrow(() -> new EntityNotFoundException("없는 테이블입니다"));
-
+    public TableTokenDto selectTable(String email, String stage, Long storeId, TableSelectDto dto) {
         if (!"STORE".equals(stage)) {
             throw new AccessDeniedException("STORE 토큰이 필요합니다.");
         }
 
-        Store store = storeRepository.findById(storeId)
-                .orElseThrow(() -> new EntityNotFoundException("Store not found"));
+        CustomerTable table = customerTableRepository
+                .findByTableNumAndStoreIdWithLock(dto.getTableNum(), storeId)
+                .orElseThrow(() -> new EntityNotFoundException("없는 테이블입니다"));
 
-        // 수정한 createTableToken 호출 (email 전달)
-        String tableToken = jwtTokenProvider.createTableToken(
-                email,
-                storeId,
-                dto.getTableNum(),
-                table.getCustomerTableId()
-        );
+        if (table.getTableStatus() == TableStatus.USING) {
+            throw new IllegalStateException("이미 사용 중인 테이블입니다.");
+        }
 
         table.setTableStatusUsing();
+        sseAlramService.sendTableStatus(String.valueOf(storeId), dto.getTableNum(), "USING");
+
+        // ── 테이블 상태 변경 브로드캐스트 추가 ──────────────────────
+        TableStatusEventDto eventDto = TableStatusEventDto.builder()
+                .tableNum(dto.getTableNum())
+                .status("USING")
+                .build();
+
+        webPublisher.publish(OwnerEventDto.builder()
+                .eventType("TABLE_STATUS")
+                .storeId(storeId)
+                .payload(eventDto)
+                .build());
+
+        String tableToken = jwtTokenProvider.createTableToken(
+                email, storeId, dto.getTableNum(), table.getCustomerTableId()
+        );
         return new TableTokenDto(tableToken);
     }
 
@@ -180,9 +192,20 @@ public class CustomerTableService {
                 .toList();
     }
 
-    public void tableRollBack(int tableNum) {
-        CustomerTable customerTable = customerTableRepository.findByTableNum(tableNum).orElseThrow(() -> new EntityNotFoundException("없는 테이블/ customerTable_ser_tableRollBack"));
-        customerTable.setTableStatusStandBy();
+    public void tableRollBack(Long customerTableId) {
+        // store까지 fetch join으로 조회 (storeId 필요)
+        CustomerTable table = customerTableRepository
+                .findByIdWithStore(customerTableId) // 기존에 있는 메서드
+                .orElseThrow(() -> new EntityNotFoundException("없는 테이블"));
+
+        table.setTableStatusStandBy();
+
+        // ── AVAILABLE 이벤트 브로드캐스트 ──────────────────────────
+        sseAlramService.sendTableStatus(
+                String.valueOf(table.getStore().getId()),
+                table.getTableNum(),
+                "AVAILABLE"
+        );
     }
 }
 

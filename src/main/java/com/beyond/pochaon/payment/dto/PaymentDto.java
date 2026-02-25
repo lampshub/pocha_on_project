@@ -1,5 +1,6 @@
 package com.beyond.pochaon.payment.dto;
 
+import com.beyond.pochaon.payment.entity.PaymentStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,6 +22,7 @@ public class PaymentDto {
         private Integer tableNum;
         private String groupId;
         private String payerType;
+        private Long storeId;
     }
 
     @Data
@@ -54,7 +56,7 @@ public class PaymentDto {
         private String orderName;
         private int totalAmount;
         private String method;
-        private String status;
+        private PaymentStatus status;
         private String approvedAt;
     }
 

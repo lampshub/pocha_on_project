@@ -52,6 +52,7 @@ public class OrderingService {
         return standByOrders.stream().map(OrderQueueDto::fromEntity).toList();
     }
 
+
     //    점주가 주문 완료 버튼 클릭
     public OrderQueueDto completeOrder(Long orderingId, Long storeId) {
 //        주문 조회

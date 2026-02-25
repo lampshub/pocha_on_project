@@ -120,6 +120,7 @@ public class ChatService {
         Map<String, Object> alarmData = Map.of(
                 "storeId", dto.getStoreId(),
                 "receiverTableNum", dto.getReceiverTableNum(),
+                "senderTableNum", dto.getSenderTableNum(),
                 "chatRoomId", dto.getChatRoomId(),
                 "message", dto.getMessage()
         );

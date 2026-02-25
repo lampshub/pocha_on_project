@@ -5,6 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 
+
 @SpringBootApplication
 @EnableJpaAuditing  //@MappedSuperclass 사용시 필요
 public class pochaonApplication {

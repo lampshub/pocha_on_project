@@ -17,6 +17,7 @@ public class MenuDetailPageDto {
     private String menuName;
     private int menuPrice;
     private int quantity;
+    @Builder.Default
     private List<mappingOption> mappingOptionList= new ArrayList<>();
 
     @AllArgsConstructor
@@ -26,6 +27,7 @@ public class MenuDetailPageDto {
     public static class mappingOption {
         private Long optionId;
         private String optionName;
+        @Builder.Default
         private List<mappingOptionDetail> mappingOptionDetailList= new ArrayList<>();
 
         @AllArgsConstructor

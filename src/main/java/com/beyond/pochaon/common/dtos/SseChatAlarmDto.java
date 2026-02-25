@@ -12,9 +12,7 @@ import lombok.NoArgsConstructor;
 public class SseChatAlarmDto {
 
     private Long storeId;
-    private int senderTable;      // 보낸 테이블
-//    private Long chatRoomId;      // ChatService에서 받음
-//    @JsonProperty("receiverTableNum") // ChatService 필드명에 맞춤
+    private int senderTableNum;   // 보낸 테이블 (추가)
     private int receiverTable;    // 받는 테이블
-    private String message;     // 알림 메시지
+    private String message;       // 알림 메시지
 }

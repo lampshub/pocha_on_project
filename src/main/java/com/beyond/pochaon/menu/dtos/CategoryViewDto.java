@@ -16,6 +16,7 @@ import java.util.List;
 public class CategoryViewDto {
     private Long categoryId;
     private String categoryName;
+    @Builder.Default
     private List<mappingMenu> mappingMenuList= new ArrayList<>();
 
     @AllArgsConstructor

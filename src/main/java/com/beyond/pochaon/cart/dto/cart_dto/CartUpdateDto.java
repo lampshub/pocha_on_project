@@ -16,6 +16,7 @@ public class CartUpdateDto {
     private Long tableId;
     private Long menuId;
     private int delta;
+    @Builder.Default
     private List<Long> optionIds= new ArrayList<>();
     private String fieldKey;
 }

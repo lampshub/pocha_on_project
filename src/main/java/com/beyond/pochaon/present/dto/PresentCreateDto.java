@@ -19,4 +19,5 @@ public class PresentCreateDto {
     private int receiverTableNum;
     private Long menuId;
     private int menuQuantity;
+    private Long storeId;
 }

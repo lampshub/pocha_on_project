@@ -9,8 +9,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class MonthlySettlementReqDto {
+public class SalesAnalysisReqDto {
     private int year;
     private int month;
-    private int day;
+    private String period;
+    private int offset;
 }

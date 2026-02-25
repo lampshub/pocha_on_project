@@ -15,6 +15,7 @@ public class RedisCartItem {
     private Long menuId;
     private String menuName;
     private String optionKey; // 내부비교
+    @Builder.Default
     private List<CartOption> cartOptionDtoList= new ArrayList<>();; //옵션 정보
     private int quantity;
     private int unitPrice;
@@ -30,6 +31,7 @@ public class RedisCartItem {
     public static class CartOption {
 
         private String optionName;
+        @Builder.Default
         private List<String> optionDetailNameList= new ArrayList<>();;
     }
 }

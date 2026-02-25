@@ -185,6 +185,7 @@ public class JwtTokenProvider {
 
     // refresh token 검증
     public Owner validateRefreshToken(String refreshToken) {
+        String cleanedInputRt = refreshToken.replace("Bearer ", "").trim();
 
         Claims claims;
 
@@ -204,7 +205,6 @@ public class JwtTokenProvider {
         Owner owner = ownerRepository.findByOwnerEmail(email)
                 .orElseThrow(() -> new EntityNotFoundException("Owner not found"));
 
-        String cleanedInputRt = refreshToken.replace("Bearer ", "").trim();
         // Redis 토큰 검증
         String redisRt = redisTemplate.opsForValue().get(email);
 
@@ -216,7 +216,7 @@ public class JwtTokenProvider {
         if (redisRt == null)
             throw new IllegalArgumentException("이미 사용된 RefreshToken");
 
-        if (!redisRt.equals(refreshToken))
+        if (!redisRt.equals(cleanedInputRt))
             throw new IllegalArgumentException("RefreshToken mismatch");
 
         return owner;
