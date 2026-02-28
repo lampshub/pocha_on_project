@@ -1,5 +1,6 @@
 package com.beyond.pochaon.customerTable.service;
 
+import com.beyond.pochaon.chat.service.ChatService;
 import com.beyond.pochaon.common.auth.JwtTokenProvider;
 import com.beyond.pochaon.common.service.SseAlramService;
 import com.beyond.pochaon.common.web.WebPublisher;
@@ -32,9 +33,10 @@ public class CustomerTableService {
     private final JwtTokenProvider jwtTokenProvider;
     private final WebPublisher webPublisher;
     private final SseAlramService sseAlramService;
+    private final ChatService chatService;
 
     @Autowired
-    public CustomerTableService(CustomerTableRepository customerTableRepository, StoreRepository storeRepository, OrderingRepository orderingRepository, SimpMessagingTemplate simpMessagingTemplate, JwtTokenProvider jwtTokenProvider, WebPublisher webPublisher, SseAlramService sseAlramService) {
+    public CustomerTableService(CustomerTableRepository customerTableRepository, StoreRepository storeRepository, OrderingRepository orderingRepository, SimpMessagingTemplate simpMessagingTemplate, JwtTokenProvider jwtTokenProvider, WebPublisher webPublisher, SseAlramService sseAlramService, ChatService chatService) {
         this.customerTableRepository = customerTableRepository;
         this.storeRepository = storeRepository;
         this.orderingRepository = orderingRepository;
@@ -42,6 +44,7 @@ public class CustomerTableService {
         this.jwtTokenProvider = jwtTokenProvider;
         this.webPublisher = webPublisher;
         this.sseAlramService = sseAlramService;
+        this.chatService = chatService;
     }
 
 
@@ -112,7 +115,7 @@ public class CustomerTableService {
         }
 
         table.setTableStatusUsing();
-        sseAlramService.sendTableStatus(String.valueOf(storeId), dto.getTableNum(), "USING");
+        sseAlramService.sendTableStatus(storeId, dto.getTableNum(), "USING");
 
         // ── 테이블 상태 변경 브로드캐스트 추가 ──────────────────────
         TableStatusEventDto eventDto = TableStatusEventDto.builder()
@@ -202,10 +205,11 @@ public class CustomerTableService {
 
         // ── AVAILABLE 이벤트 브로드캐스트 ──────────────────────────
         sseAlramService.sendTableStatus(
-                String.valueOf(table.getStore().getId()),
+               table.getStore().getId(),
                 table.getTableNum(),
                 "AVAILABLE"
         );
+        chatService.closeAllRoomsByTable(table.getStore().getId(), table.getTableNum());
     }
 }
 

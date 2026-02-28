@@ -14,7 +14,7 @@ import java.util.Optional;
 public interface MenuRepository extends JpaRepository<Menu, Long> {
     // 카테고리별 메뉴 조회
     List<Menu> findByCategoryId(Long categoryId);
-
+    List<Menu> findByCategoryStoreId(Long storeId);
 
     // 메뉴 상세 조회 (옵션 + 옵션디테일 fetch join)
     @Query("""

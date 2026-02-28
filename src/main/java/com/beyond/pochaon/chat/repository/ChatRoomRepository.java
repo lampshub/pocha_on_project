@@ -40,4 +40,6 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
             @Param("storeId") Long storeId,
             @Param("tableNum") Integer tableNum
     );
+
+    Optional<ChatRoom> findByRoomKey(String roomKey);
 }

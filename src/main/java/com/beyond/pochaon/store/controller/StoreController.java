@@ -52,47 +52,5 @@ public class StoreController {
         return ResponseEntity.status(HttpStatus.OK).body("운영시간이 수정되었습니다");
     }
 
-    @GetMapping("/monthlysettlement")
-    public ResponseEntity<?> getMonthlySettlement(@ModelAttribute MonthlySettlementReqDto dto, @RequestAttribute Long storeId) {
-        return ResponseEntity.ok(storeService.getMonthlyCalender(storeId, dto.getYear(), dto.getMonth()));
-    }
 
-    @GetMapping("/dailysettlement")
-    public ResponseEntity<?> getDailySettlement(@ModelAttribute DailySettlementReqDto dto, @RequestAttribute Long storeId) {
-        return ResponseEntity.ok(storeService.getDailySettlement(storeId, dto.getYear(), dto.getMonth(), dto.getDay()));
-    }
-
-    // ── [2] 메뉴 분석 탭 ──
-
-    @GetMapping("/analysis/menu")
-    public ResponseEntity<MenuAnalysisResDto> getMenuAnalysis(
-            @ModelAttribute MonthlySettlementReqDto dto,
-            @RequestAttribute Long storeId) {
-        return ResponseEntity.ok(storeService.getMenuAnalysis(storeId, dto.getYear(), dto.getMonth(), dto.getDay()));
-    }
-
-    // ── [3] 매출 분석 탭 ──
-
-    @GetMapping("/analysis/sales")
-    public ResponseEntity<SalesAnalysisResDto> getSalesAnalysis(
-            @ModelAttribute MonthlySettlementReqDto dto,
-            @RequestAttribute Long storeId) {
-        return ResponseEntity.ok(storeService.getSalesAnalysis(storeId, dto.getYear(), dto.getMonth()));
-    }
-
-    // ── [4] 결제 분석 탭 ──
-
-    @GetMapping("/analysis/payment")
-    public ResponseEntity<PaymentAnalysisResDto> getPaymentAnalysis(
-            @ModelAttribute MonthlySettlementReqDto dto,
-            @RequestAttribute Long storeId) {
-        return ResponseEntity.ok(storeService.getPaymentAnalysis(storeId, dto.getYear(), dto.getMonth()));
-    }
-
-    @GetMapping("/analysis/table")
-    public ResponseEntity<TableAnalysisResDto> getTableAnalysis(
-            @ModelAttribute MonthlySettlementReqDto dto,
-            @RequestAttribute Long storeId) {
-        return ResponseEntity.ok(storeService.getTableAnalysis(storeId, dto.getYear(), dto.getMonth()));
-    }
 }

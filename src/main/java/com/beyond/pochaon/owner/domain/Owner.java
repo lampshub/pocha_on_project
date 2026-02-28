@@ -24,7 +24,9 @@ public class Owner extends BaseTimeEntity {
     @Pattern(regexp = "^\\d{10}$", message = "사업자등록번호는 10자리 숫자여야 합니다")
     private String businessRegistrationNumber; //사업자 등록 번호
     private String password;
+    @Column(unique = true)
     private String phoneNumber;
+    @Column(length = 50)
     private String ownerName;
     @Column(unique = true)
     private String ownerEmail;

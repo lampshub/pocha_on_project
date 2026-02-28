@@ -46,8 +46,8 @@ public class StompWebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void configureClientInboundChannel(ChannelRegistration registration){
         registration.interceptors(
-                stompHandler,
-                webSocketAuthInterceptor
+                webSocketAuthInterceptor,  // 인증 먼저
+                stompHandler               // 구독 권한 검증
         );
     }
 }

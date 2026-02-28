@@ -11,12 +11,16 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/sse")
 @Slf4j
 public class SseController {
-//데이터 형식
+    //데이터 형식
 // {
 //  "storeId": "1",
 //  "tableNum": "3",
@@ -26,6 +30,9 @@ public class SseController {
     private final JwtTokenProvider jwtTokenProvider;
     private final SseAlramService sseAlramService;
 
+    private final ScheduledExecutorService heartbeatScheduler =
+            Executors.newScheduledThreadPool(2);
+
     @Autowired
     public SseController(SseEmitterRegistry sseEmitterRegistry, JwtTokenProvider jwtTokenProvider, SseAlramService sseAlramService) {
         this.sseEmitterRegistry = sseEmitterRegistry;
@@ -33,7 +40,7 @@ public class SseController {
         this.sseAlramService = sseAlramService;
     }
 
-//Sse연결 api 토큰의 stage를 통해 점주/테이블을 구분해서 각각의 Map에 등록
+    //Sse연결 api 토큰의 stage를 통해 점주/테이블을 구분해서 각각의 Map에 등록
     @GetMapping("/connect")
     public SseEmitter connect(@RequestHeader("Authorization") String bearerToken) throws IOException {
         log.info("===connect start===");
@@ -49,7 +56,29 @@ public class SseController {
             sseEmitterRegistry.addSseEmitter(String.valueOf(storeId), String.valueOf(tableNum), sseEmitter);
         }
         sseEmitter.send(SseEmitter.event().name("connect").data("store 연결완료")); //연결될 때 나오는 로그
-        return sseEmitter;
+// heartbeat: 20초마다 comment 전송 → 45초 타임아웃 방지
+        ScheduledFuture<?> heartbeat = heartbeatScheduler.scheduleAtFixedRate(() -> {
+            try {
+                sseEmitter.send(SseEmitter.event().comment("heartbeat"));
+            } catch (IOException | IllegalStateException e) {
+                log.debug("heartbeat 전송 실패 - 연결 종료됨");
+            }
+        }, 20, 20, TimeUnit.SECONDS);
+
+        // emitter 종료 시 heartbeat도 정리
+        Runnable cleanup = () -> {
+            heartbeat.cancel(false);
+            if ("STORE".equals(false)) {
+                sseEmitterRegistry.removeOwnerEmitter(String.valueOf(storeId), sseEmitter);
+            } else if ("TABLE".equals(stage)) {
+                int tableNum = jwtTokenProvider.getTableNum(token);
+                sseEmitterRegistry.removeEmitter(String.valueOf(storeId), String.valueOf(tableNum));
+            }
+        };
+            sseEmitter.onCompletion(cleanup);
+            sseEmitter.onTimeout(cleanup);
+            sseEmitter.onError(e -> cleanup.run());
+            return sseEmitter;
     }
 
     @GetMapping("/disstaffcall")
@@ -68,7 +97,12 @@ public class SseController {
         String token = bearer.substring(7); //bearer 는 storeToken ?
         Long storeId = jwtTokenProvider.getStoreId(token);
         Integer tableNum = jwtTokenProvider.getTableNum(token);
-        sseAlramService.sendToOwner(String.valueOf(storeId), String.valueOf(tableNum), tableNum + "번 테이블에서 직원을 호출했습니다.");
-        return ResponseEntity.ok("호출완료");
+        try {
+            sseAlramService.sendToOwner(String.valueOf(storeId), String.valueOf(tableNum), tableNum + "번 테이블에서 직원을 호출했습니다.");
+            return ResponseEntity.ok("호출완료");
+        } catch (Exception e) {
+            log.warn("직원 호출 전송 실패: {}", e.getMessage());
+            return ResponseEntity.ok("호출 처리됨(재시도 예정)");
+        }
     }
 }

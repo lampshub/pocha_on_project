@@ -79,4 +79,8 @@ public class ChatRoom {
         }
         throw new IllegalArgumentException("해당 테이블은 이 채팅방에 없습니다");
     }
+
+    public void reopen() {
+        this.isActive = true;
+    }
 }

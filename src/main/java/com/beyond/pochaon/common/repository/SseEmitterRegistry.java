@@ -48,10 +48,10 @@ public class SseEmitterRegistry {
     public void addOwnerEmitter(String storeId, SseEmitter sseEmitter) {
         ownerEmitterMap.computeIfAbsent(storeId, k -> new CopyOnWriteArrayList<>()).add(sseEmitter);
 
-        // emitter 완료/에러/타임아웃 시 자동 제거
-        sseEmitter.onCompletion(() -> removeOwnerEmitter(storeId, sseEmitter));
-        sseEmitter.onTimeout(() -> removeOwnerEmitter(storeId, sseEmitter));
-        sseEmitter.onError(e -> removeOwnerEmitter(storeId, sseEmitter));
+//        // emitter 완료/에러/타임아웃 시 자동 제거
+//        sseEmitter.onCompletion(() -> removeOwnerEmitter(storeId, sseEmitter));
+//        sseEmitter.onTimeout(() -> removeOwnerEmitter(storeId, sseEmitter));
+//        sseEmitter.onError(e -> removeOwnerEmitter(storeId, sseEmitter));
     }
 
 //    점주의 emitter 조회

@@ -6,6 +6,7 @@ import lombok.NonNull;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -52,6 +53,16 @@ public class CommonExceptionHandler {
         e.printStackTrace();
         CommonErrorDto ce_dto = CommonErrorDto.builder().statusCode(404).errorMessage(e.getMessage()).build();
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ce_dto);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<?> accessDenied(AccessDeniedException e) {
+        e.printStackTrace();
+        CommonErrorDto ce_dto = CommonErrorDto.builder()
+                .statusCode(403)
+                .errorMessage(e.getMessage())
+                .build();
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ce_dto);
     }
 
     @ExceptionHandler(AuthorizationDeniedException.class)

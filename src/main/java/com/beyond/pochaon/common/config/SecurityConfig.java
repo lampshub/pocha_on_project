@@ -4,6 +4,7 @@ import com.beyond.pochaon.common.auth.JwtTokenFilter;
 import com.beyond.pochaon.common.auth.JwtTokenProvider;
 import com.beyond.pochaon.common.exception.JwtAccessDeniedHandler;
 import com.beyond.pochaon.common.exception.JwtAuthenticationHandler;
+import jakarta.servlet.DispatcherType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -64,7 +65,8 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(a ->
                         // WebSocket 관련 모든 경로 허용
-                        a.requestMatchers("/ws-stomp/**").permitAll().requestMatchers(
+                        a.dispatcherTypeMatchers(DispatcherType.ASYNC).permitAll()
+                                .requestMatchers("/ws-stomp/**").permitAll().requestMatchers(
                                         "/owner/baseLogin",
                                         "/owner/verify-password",
                                         "/test/**",
@@ -77,14 +79,15 @@ public class SecurityConfig {
                                         "/owner/create",
                                         "/owner/refresh",
                                         "/customertable/tablestatuslist",
-                                       "/ordering/total",
+                                        "/ordering/total",
                                         "/api/payment/**",
+                                        "/sseChat/**",
                                         "/auth/email/send",
                                         "/auth/email/verify",
                                         "/auth/password/reset",
                                         "/auth/sms/send",
                                         "/auth/sms/verify",
-
+                                        "/store/menu/**",
                                         "/customertable/**",
                                         "/store/detail/**",
                                         "/ws-stomp/**",

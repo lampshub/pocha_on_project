@@ -1,7 +1,6 @@
 package com.beyond.pochaon.menu.domain;
 
 
-import com.beyond.pochaon.store.domain.Store;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -29,10 +28,6 @@ public class Menu {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id",foreignKey = @ForeignKey(ConstraintMode.CONSTRAINT), nullable = false)
     private Category category;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "store_id",foreignKey = @ForeignKey(ConstraintMode.CONSTRAINT), nullable = false)
-    private Store store;
 
     @OneToMany(mappedBy = "menu", fetch = FetchType.LAZY,  cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default

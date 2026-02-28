@@ -5,13 +5,11 @@ import com.beyond.pochaon.owner.dtos.*;
 import com.beyond.pochaon.owner.service.OwnerLoginService;
 import com.beyond.pochaon.owner.service.OwnerMyPageService;
 import com.beyond.pochaon.owner.service.OwnerService;
-import com.beyond.pochaon.store.dtos.SimpleSettlementDto;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -64,19 +62,6 @@ public class OwnerController {
     public ResponseEntity<?> updatePassword(@RequestBody UpdatePasswordReqDto reqDto) {
         ownerMyPageService.myPageUpdatePassword(reqDto);
         return ResponseEntity.ok("비밀번호 변경 완료");
-    }
-
-    @GetMapping("/settlement") //마이페이지 정산 관리 페이지에 들어갈 코드
-    public ResponseEntity<?> getSettlement(@RequestAttribute Long storeId) {
-        SimpleSettlementDto dto = ownerService.getSettlement(storeId);
-        return ResponseEntity.ok(dto);
-    }
-
-//  월매출 정산
-    @GetMapping("/storesettlement")
-    public ResponseEntity<?> getStoreSettlement(@AuthenticationPrincipal String email) {
-        OwnerStoreSettlementResDto dto = ownerService.getStoreSettlement(email);
-        return ResponseEntity.ok(dto);
     }
 
     @PostMapping("/verify-password")

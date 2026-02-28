@@ -44,7 +44,7 @@ public class ViewController {
 
     //        4.카테고리별 묶음
     @GetMapping("/category")
-    public List<CategoryViewDto> getAllCategory() {
+    public List<CategoryViewDto> getAllCategory() throws AccessDeniedException {
         return viewService.findAllCategory();
     }
 }

@@ -1,4 +1,4 @@
-package com.beyond.pochaon.store.dtos;
+package com.beyond.pochaon.store.settlementdto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

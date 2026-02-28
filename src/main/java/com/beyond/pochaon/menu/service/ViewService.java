@@ -36,13 +36,12 @@ import java.util.List;
 
         // 1 전체 메뉴 조회
         public List<MenuViewDto> findAllMenu() throws AccessDeniedException {
-
             Long storeId = (Long) request.getAttribute("storeId");
             if (storeId == null) {
                 throw new AccessDeniedException("해당 권한이 없습니다");
             }
 
-            List<Menu> menus = menuRepository.findAll();
+            List<Menu> menus = menuRepository.findByCategoryStoreId(storeId);
             List<MenuViewDto> result = new ArrayList<>();
 
             for (Menu menu : menus) {
@@ -147,8 +146,12 @@ import java.util.List;
 
 
         //        4.
-        public List<CategoryViewDto> findAllCategory() {
-            List<Category> categoryList = categoryRepository.findAll();
+        public List<CategoryViewDto> findAllCategory() throws AccessDeniedException {
+            Long storeId = (Long) request.getAttribute("storeId");
+            if (storeId == null) {
+                throw new AccessDeniedException("매장 선택 후 이용가능합니다");
+            }
+            List<Category> categoryList = categoryRepository.findByStoreId(storeId);
 
             List<CategoryViewDto> result = new ArrayList<>();
             for (Category category : categoryList) {

@@ -18,7 +18,9 @@ public class OrderingDetailOption {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     private String orderingOptionName;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ordering_detail_id", foreignKey = @ForeignKey(ConstraintMode.CONSTRAINT), nullable = false)
     private OrderingDetail orderingDetail;

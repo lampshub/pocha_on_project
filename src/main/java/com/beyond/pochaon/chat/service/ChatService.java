@@ -51,11 +51,7 @@ public class ChatService {
     // 채팅방 생성 or 조회
     // ===============================
     @Transactional
-    public ChatRoom getOrCreateChatRoom(
-            Long storeId,
-            Integer myTableNum,
-            Integer otherTableNum
-    ) {
+    public ChatRoom getOrCreateChatRoom(Long storeId, Integer myTableNum, Integer otherTableNum) {
         CustomerTable otherTable = customerTableRepository
                 .findByStoreIdAndTableNum(storeId, otherTableNum)
                 .orElseThrow(() -> new IllegalArgumentException(
@@ -68,23 +64,32 @@ public class ChatService {
 
         int min = Math.min(myTableNum, otherTableNum);
         int max = Math.max(myTableNum, otherTableNum);
-
         String roomKey = storeId + ":" + min + ":" + max;
 
+        // 1. 활성 채팅방이 있으면 그대로 반환
         return chatRoomRepository
                 .findByRoomKeyAndIsActive(roomKey, true)
                 .orElseGet(() -> {
-                    ChatRoom room = ChatRoom.builder()
-                            .storeId(storeId)
-                            .table1Num(min)
-                            .table2Num(max)
-                            .isActive(true)
-                            .build();
-
-                    ChatRoom saved = chatRoomRepository.save(room);
-
-                    log.info("채팅방 생성 id={} {}↔{}", saved.getId(), min, max);
-                    return saved;
+                    // 2. 비활성(닫힌) 채팅방이 있으면 재활성화
+                    return chatRoomRepository
+                            .findByRoomKey(roomKey)
+                            .map(existingRoom -> {
+                                existingRoom.reopen(); // isActive = true로 변경
+                                log.info("채팅방 재활성화 id={} {}↔{}", existingRoom.getId(), min, max);
+                                return chatRoomRepository.save(existingRoom);
+                            })
+                            .orElseGet(() -> {
+                                // 3. 아예 없으면 새로 생성
+                                ChatRoom room = ChatRoom.builder()
+                                        .storeId(storeId)
+                                        .table1Num(min)
+                                        .table2Num(max)
+                                        .isActive(true)
+                                        .build();
+                                ChatRoom saved = chatRoomRepository.save(room);
+                                log.info("채팅방 생성 id={} {}↔{}", saved.getId(), min, max);
+                                return saved;
+                            });
                 });
     }
 
@@ -195,9 +200,25 @@ public class ChatService {
     // ===============================
     @Transactional
     public void closeChatRoom(Long roomId) {
-
         ChatRoom room = chatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new IllegalArgumentException("채팅방 없음"));
+
+        //  종료 전에 상대방에게 알림 전송
+        Map<String, Object> closeData = Map.of(
+                "type", "chat-closed",
+                "chatRoomId", roomId,
+                "table1Num", room.getTable1Num(),
+                "table2Num", room.getTable2Num(),
+                "storeId", room.getStoreId()
+        );
+        try {
+            ssePubSubChatRedisTemplate.convertAndSend(
+                    "chatting-channel",
+                    objectMapper.writeValueAsString(closeData)
+            );
+        } catch (Exception e) {
+            log.error("채팅 종료 알림 전송 실패", e);
+        }
 
         room.close();
         chatRoomRepository.save(room);
@@ -205,10 +226,7 @@ public class ChatService {
         chatRedisTemplate.delete(MESSAGE_LIST_KEY.formatted(roomId));
         chatRedisTemplate.delete(LAST_MESSAGE_KEY.formatted(roomId));
 
-        // unread 전체 삭제
-        Set<String> keys =
-                chatRedisTemplate.keys("chat:room:" + roomId + ":unread:*");
-
+        Set<String> keys = chatRedisTemplate.keys("chat:room:" + roomId + ":unread:*");
         if (keys != null && !keys.isEmpty())
             chatRedisTemplate.delete(keys);
 

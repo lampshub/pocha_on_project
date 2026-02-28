@@ -25,13 +25,13 @@ public class SseAlramService implements MessageListener {
     private final RedisTemplate<String, String> redisTemplate;
 
     @Autowired
-    public SseAlramService(SseEmitterRegistry sseEmitterRegistry, ObjectMapper objectMapper, @Qualifier("ssePubSub")RedisTemplate<String, String> redisTemplate) {
+    public SseAlramService(SseEmitterRegistry sseEmitterRegistry, ObjectMapper objectMapper, @Qualifier("ssePubSub") RedisTemplate<String, String> redisTemplate) {
         this.sseEmitterRegistry = sseEmitterRegistry;
         this.objectMapper = objectMapper;
         this.redisTemplate = redisTemplate;
     }
 
-//    점주 -> 특정 테이블에 메시지 전송. emitter가 있으면 직접 전송 없으면 pub/sub
+    //    점주 -> 특정 테이블에 메시지 전송. emitter가 있으면 직접 전송 없으면 pub/sub
     public void sendMessage(String storeId, String tableNum, String message) {
         SseEmitter sseEmitter = sseEmitterRegistry.getEmitter(storeId, tableNum);
         SseMessageDto dto = SseMessageDto.builder()
@@ -43,7 +43,14 @@ public class SseAlramService implements MessageListener {
         try {
             String data = objectMapper.writeValueAsString(dto);
             if (sseEmitter != null) {
-                sseEmitter.send(SseEmitter.event().name("staffcall").data(data));
+                try {
+
+                    sseEmitter.send(SseEmitter.event().name("staffcall").data(data));
+                } catch (IOException e) {
+                    log.warn("전송실패");
+                    sseEmitterRegistry.removeEmitter(storeId, tableNum);
+                    redisTemplate.convertAndSend("staffcall-channel", data);
+                }
             } else {
                 redisTemplate.convertAndSend("staffcall-channel", data);
             }
@@ -53,24 +60,30 @@ public class SseAlramService implements MessageListener {
 
     }
 
-//    redis pub/sub 구독 콜백. 다른 서버에서 convertAndSend로 보낸 메시지를 수신해서 점주 emitter로 전달
+    //    redis pub/sub 구독 콜백. 다른 서버에서 convertAndSend로 보낸 메시지를 수신해서 점주 emitter로 전달
     @Override
     public void onMessage(Message message, @Nullable byte[] pattern) {
         String channelName = new String(pattern);
         try {
             SseMessageDto dto = objectMapper.readValue(message.getBody(), SseMessageDto.class);
             SseEmitter sseEmitter = sseEmitterRegistry.getOwnerEmitter(dto.getStoreId());
-            String data = objectMapper.writeValueAsString(dto);
             if (sseEmitter != null) {
-                sseEmitter.send(SseEmitter.event().name("staffcall").data(data));
+                try {
+                    String data = objectMapper.writeValueAsString(dto);
+                    sseEmitter.send(SseEmitter.event().name("staffcall").data(data));
+                } catch (IOException e) {
+                    log.warn("전송 실패 storeId = {}", dto.getStoreId());
+                    sseEmitterRegistry.removeOwnerEmitter(dto.getStoreId(), sseEmitter);
+                }
             }
-            log.info("message: {}", dto);
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
         }
+
+
     }
 
-//    점주에게 알림 전송. 없으면 redis staffcall-channel로 pub
+    //    점주에게 알림 전송. 없으면 redis staffcall-channel로 pub
     public void sendToOwner(String storeId, String tableNum, String message) {
         SseEmitter ownerEmitter = sseEmitterRegistry.getOwnerEmitter(storeId);
         SseMessageDto dto = SseMessageDto.builder()
@@ -81,7 +94,14 @@ public class SseAlramService implements MessageListener {
         try {
             String data = objectMapper.writeValueAsString(dto);
             if (ownerEmitter != null) {
-                ownerEmitter.send(SseEmitter.event().name("staffcall").data(data));
+                try {
+                    ownerEmitter.send(SseEmitter.event().name("staffcall").data(data));
+                } catch (IOException e) {
+                    log.warn("owner emitter전송 실패, storeId = {}", storeId);
+                    sseEmitterRegistry.removeOwnerEmitter(storeId, ownerEmitter);
+
+                    redisTemplate.convertAndSend("staffcall-channel", data);
+                }
             } else {
                 redisTemplate.convertAndSend("staffcall-channel", data);
             }
@@ -89,6 +109,7 @@ public class SseAlramService implements MessageListener {
             e.printStackTrace();
         }
     }
+
     public void sendToOwner2(String storeId, String eventName, Object data) {
         SseEmitter emitter = sseEmitterRegistry.getOwnerEmitter(storeId); // 기존 구조에 맞게 수정
         if (emitter == null) return;
@@ -103,15 +124,14 @@ public class SseAlramService implements MessageListener {
 
 
     // SseAlramService.java
-    public void sendTableStatus(String storeId, int tableNum, String status) {
+    public void sendTableStatus(Long storeId, int tableNum, String status) {
         Map<String, Object> payload = Map.of(
                 "tableNum", tableNum,
                 "status", status
         );
         try {
-            // ObjectMapper로 명시적 JSON 직렬화
             String json = objectMapper.writeValueAsString(payload);
-            sseEmitterRegistry.broadcastToOwner(storeId, "TABLE_STATUS", json);
+            sseEmitterRegistry.broadcastToOwner(String.valueOf(storeId), "TABLE_STATUS", json);
         } catch (JsonProcessingException e) {
             log.error("TABLE_STATUS 직렬화 실패", e);
         }

@@ -2,7 +2,6 @@ package com.beyond.pochaon.menu.dtos;
 
 import com.beyond.pochaon.menu.domain.Category;
 import com.beyond.pochaon.menu.domain.Menu;
-import com.beyond.pochaon.store.domain.Store;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -24,13 +23,12 @@ public class MenuCreateReqDto {
     private MultipartFile menuImage;
 
 
-    public Menu toEntity(Store store,Category category){
+    public Menu toEntity(Category category){
         return Menu.builder()
                 .menuName(this.menuName)
                 .price(this.price)
                 .origin(this.origin)
                 .explanation(this.explanation)
-                .store(store)
                 .category(category)
                 .build();
     }

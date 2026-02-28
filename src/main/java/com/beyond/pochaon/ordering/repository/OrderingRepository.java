@@ -2,12 +2,13 @@ package com.beyond.pochaon.ordering.repository;
 
 import com.beyond.pochaon.ordering.domain.OrderStatus;
 import com.beyond.pochaon.ordering.domain.Ordering;
-import io.lettuce.core.dynamic.annotation.Param;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
@@ -16,8 +17,20 @@ public interface OrderingRepository extends JpaRepository<Ordering, Long> {
 
     List<Ordering> findByGroupId(UUID groupId);
 
+    @Query("SELECT DISTINCT o FROM Ordering o " +
+            "JOIN FETCH o.orderDetail od " +
+            "JOIN FETCH od.menu m " +
+            "JOIN FETCH m.category " +
+            "WHERE o.groupId IN :groupIds")
+    List<Ordering> findByGroupIdIn(@Param("groupIds") Collection<UUID> groupIds);
+
     //    취소된 주문리스트 찾기
     List<Ordering> findByOrderStatusOrderByIdDesc(OrderStatus status);
+
+    //    테스트용
+    // 해당 매장의 가장 오래된 주문 시간 조회 (백필 시작점)
+    @Query("SELECT MIN(o.createTimeAt) FROM Ordering o WHERE o.customerTable.store.id = :storeId")
+    LocalDateTime findEarliestOrderDate(@Param("storeId") Long storeId);
 
     //    매장의 standBy 상태로 주문 조회
 //    조인해서 매장별 필터링 / 오래된 주문이 위로

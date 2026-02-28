@@ -18,6 +18,7 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,7 +27,6 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
-import java.nio.file.AccessDeniedException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -68,7 +68,8 @@ public class MenuService {
         }
 
         Category category = categoryRepository.findById(reqDto.getCategoryId()).orElseThrow(() -> new EntityNotFoundException("Category not found"));
-        Menu menu = menuRepository.save(reqDto.toEntity(store, category));
+
+        Menu menu = menuRepository.save(reqDto.toEntity(category));
         if (reqDto.getMenuImage() != null && !reqDto.getMenuImage().isEmpty()) {
             String fileName = "menu-" + menu.getId() + "-" + reqDto.getMenuImage().getOriginalFilename();
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()

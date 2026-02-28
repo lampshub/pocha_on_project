@@ -33,7 +33,7 @@ public class PresentService {
     private final RedisTemplate<String, String> groupRedisTemplate;
     private final WebPublisher webPublisher;
 
-    public PresentService(@Qualifier("idempotencyRedisTemplate") RedisTemplate<String, String> idempotencyRedisTemplate, OrderingRepository orderingRepository, CustomerTableRepository customerTableRepository, MenuRepository menuRepository, RedisTemplate<String, String> groupRedisTemplate, WebPublisher webPublisher) {
+    public PresentService(@Qualifier("idempotencyRedisTemplate") RedisTemplate<String, String> idempotencyRedisTemplate, OrderingRepository orderingRepository, CustomerTableRepository customerTableRepository, MenuRepository menuRepository,  @Qualifier("groupRedisTemplate") RedisTemplate<String, String> groupRedisTemplate, WebPublisher webPublisher) {
         this.idempotencyRedisTemplate = idempotencyRedisTemplate;
         this.orderingRepository = orderingRepository;
         this.customerTableRepository = customerTableRepository;

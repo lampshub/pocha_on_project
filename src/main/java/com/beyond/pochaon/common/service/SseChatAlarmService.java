@@ -3,6 +3,7 @@ package com.beyond.pochaon.common.service;
 import com.beyond.pochaon.common.dtos.SseChatAlarmDto;
 import com.beyond.pochaon.common.repository.SseChatAlarmRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.connection.Message;
@@ -13,6 +14,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.Map;
 
+@Slf4j
 @Component
 public class SseChatAlarmService implements MessageListener {
     private final SseChatAlarmRegistry sseChatAlarmRegistry;
@@ -32,16 +34,38 @@ public class SseChatAlarmService implements MessageListener {
     public void onMessage(Message message, byte[] pattern) {
         try {
             Map<String, Object> raw = objectMapper.readValue(message.getBody(), Map.class);
+            log.info("★ [SSE onMessage] 수신: {}", raw);
 
+            // ★ 채팅 종료 이벤트 처리
+            if ("chat-closed".equals(raw.get("type"))) {
+                Long storeId = Long.valueOf(raw.get("storeId").toString());
+                int table1 = Integer.parseInt(raw.get("table1Num").toString());
+                int table2 = Integer.parseInt(raw.get("table2Num").toString());
+                String data = objectMapper.writeValueAsString(raw);
+
+                // 양쪽 테이블 모두에게 SSE 전송
+                for (int tableNum : new int[]{table1, table2}) {
+                    String key = storeId + "-" + tableNum;
+                    SseEmitter emitter = sseChatAlarmRegistry.getEmitter(key);
+                    log.info("★ [chat-closed] key={}, emitter존재={}", key, emitter != null);
+                    if (emitter != null) {
+                        emitter.send(SseEmitter.event()
+                                .name("chat-closed")
+                                .data(data));
+                        log.info("★ [chat-closed] key={}, emitter존재={}", key, emitter != null);
+                    }
+                }
+                return; // ★ 여기서 리턴해야 아래 일반 알림 로직을 타지 않음
+            }
+
+            // ── 기존 채팅 알림 로직 (그대로 유지) ──
             Long storeId = Long.valueOf(raw.get("storeId").toString());
 
-            // receiverTableNum 파싱 (필드명 방어)
             Object receiverRaw = raw.get("receiverTableNum") != null
                     ? raw.get("receiverTableNum")
                     : raw.get("receiverTable");
             int receiverTable = Integer.parseInt(receiverRaw.toString());
 
-            // ★ senderTableNum 파싱 (필드명 방어)
             Object senderRaw = raw.get("senderTableNum") != null
                     ? raw.get("senderTableNum")
                     : raw.get("senderTable");
@@ -49,15 +73,13 @@ public class SseChatAlarmService implements MessageListener {
 
             String msg = (String) raw.get("message");
 
-            // 알람 ON/OFF 체크
             String alarmKey = "alarm:" + storeId + ":" + receiverTable;
             String status = redisTemplate.opsForValue().get(alarmKey);
             if ("OFF".equals(status)) return;
 
-            // ★ senderTableNum 포함해서 SSE 전송
             SseChatAlarmDto dto = SseChatAlarmDto.builder()
                     .storeId(storeId)
-                    .senderTableNum(senderTableNum)   // ★ 추가
+                    .senderTableNum(senderTableNum)
                     .receiverTable(receiverTable)
                     .message(msg)
                     .build();
