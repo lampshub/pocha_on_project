@@ -1,7 +1,7 @@
 package com.beyond.pochaon.owner.service;
 
-import com.beyond.pochaon.owner.dtos.BusinessApiReqDto;
-import com.beyond.pochaon.owner.dtos.BusinessApiResDto;
+import com.beyond.pochaon.owner.dto.BusinessApiReqDto;
+import com.beyond.pochaon.owner.dto.BusinessApiResDto;
 import com.beyond.pochaon.owner.repository.OwnerVerifyClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

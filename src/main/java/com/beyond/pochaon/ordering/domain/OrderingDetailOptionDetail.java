@@ -18,7 +18,7 @@ public class OrderingDetailOptionDetail {
     private Long id;
 
     private String optionDetailName;
-
+    private int optionDetailQuantity;
     private int optionDetailPrice;
 
     @ManyToOne(fetch = FetchType.LAZY)

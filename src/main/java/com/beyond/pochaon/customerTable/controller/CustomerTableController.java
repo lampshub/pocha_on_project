@@ -1,6 +1,6 @@
 package com.beyond.pochaon.customerTable.controller;
 
-import com.beyond.pochaon.customerTable.dtos.*;
+import com.beyond.pochaon.customerTable.dto.*;
 import com.beyond.pochaon.customerTable.service.CustomerTableService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;

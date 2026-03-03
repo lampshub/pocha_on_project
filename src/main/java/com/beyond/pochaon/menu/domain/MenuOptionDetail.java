@@ -16,14 +16,21 @@ public class MenuOptionDetail {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String optionDetailName;
+    private Integer maxQuantity; //수량 제한
     private int optionDetailPrice;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "menu_option_id", foreignKey = @ForeignKey(ConstraintMode.CONSTRAINT), nullable = false)
     private MenuOption menuOption;
 
-    public void update(String detailName, int detailPrice) {
+    public void update(String detailName, int detailPrice, Integer maxQuantity) {
         this.optionDetailName = detailName;
         this.optionDetailPrice = detailPrice;
+        this.maxQuantity = maxQuantity;
+    }
+
+    @PrePersist
+    public void setDefault(){
+        if(this.maxQuantity == null)this.maxQuantity=1;
     }
 }
 

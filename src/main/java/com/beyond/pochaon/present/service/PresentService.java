@@ -138,6 +138,7 @@ public class PresentService {
 
         PresentQueueDto.PresentDetail presentDetail = PresentQueueDto.PresentDetail.builder()
                 .menuName(menu.getMenuName())
+                .menuPrice(menu.getPrice())
                 .quantity(createDto.getMenuQuantity())
                 .build();
 
@@ -168,6 +169,7 @@ public class PresentService {
 
         PresentOwnerDto.MenuDto menuDto =PresentOwnerDto.MenuDto.builder()
                 .menuName(menu.getMenuName())
+                .menuPrice(menu.getPrice())
                 .menuQuantity(createDto.getMenuQuantity())
                 .build();
         menuDtoList.add(menuDto);

@@ -1,19 +1,20 @@
 package com.beyond.pochaon.ingredient.domain;
 
+import com.beyond.pochaon.common.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-@Data
+@Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-public class IngredientDetail {
+public class IngredientDetail extends BaseTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ingredient_detail_id")
@@ -24,13 +25,20 @@ public class IngredientDetail {
     private Ingredient ingredient;
 
     @Column(nullable = false)
-    private String ingredientName;
+    private int initialQuantity; // 입고 수량
 
     @Column(nullable = false)
-    private int quantity;
+    private int currentQuantity; // 현재 남은 수량
+
+    @Column(nullable = false)
+    private int unitPrice;       // 개당 단가
+
+    @Column(nullable = false)
+    private int totalPrice;      // 입고 총액
 
     private LocalDateTime deadline;  // 유통기한
 
-    @Column(nullable = false)
-    private int price;
+    public void updateCurrentQuantity(int finalQuantity) {
+        this.currentQuantity = finalQuantity;
+    }
 }

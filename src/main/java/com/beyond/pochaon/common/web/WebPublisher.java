@@ -26,13 +26,13 @@ public class WebPublisher {
 
         this.tableredisTemplate = tableredisTemplate;
     }
-
+//  일반주문 (일반, 선물)
     public void publish(OwnerEventDto eventDto) {
         log.info("REDIS PUBLISH 성공 channel=owner-event, type={}, storeId={}",
                 eventDto.getEventType(), eventDto.getStoreId());
         redisTemplate.convertAndSend(orderTopic.getTopic(), eventDto); //t-order
     }
-
+//  선물 손님
     public void tablePublish(PresentReceiverDto receiverDto) {
         tableredisTemplate.convertAndSend(tableTopic.getTopic(), receiverDto); //t-order
     }

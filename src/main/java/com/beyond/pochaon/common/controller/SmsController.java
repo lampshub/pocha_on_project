@@ -1,7 +1,7 @@
 package com.beyond.pochaon.common.controller;
 
-import com.beyond.pochaon.common.dtos.SmsSendReqDto;
-import com.beyond.pochaon.common.dtos.SmsVerifyReqDto;
+import com.beyond.pochaon.common.dto.SmsSendReqDto;
+import com.beyond.pochaon.common.dto.SmsVerifyReqDto;
 import com.beyond.pochaon.common.service.SmsAuthService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;

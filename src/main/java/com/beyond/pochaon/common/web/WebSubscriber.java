@@ -1,7 +1,7 @@
 package com.beyond.pochaon.common.web;
 
 
-import com.beyond.pochaon.customerorder.dto.OrderCreateDto;
+import com.beyond.pochaon.ordering.dto.OrderCreateDto;
 import com.beyond.pochaon.present.dto.OwnerEventDto;
 import com.beyond.pochaon.present.dto.PresentOwnerDto;
 import com.beyond.pochaon.present.dto.PresentQueueDto;
@@ -41,7 +41,7 @@ public class WebSubscriber {
 
         }else if("PRESENT_QUEUE".equals(eventDto.getEventType())){
             PresentQueueDto queueDto = objectMapper.convertValue(eventDto.getPayload(),PresentQueueDto.class);
-            messagingTemplate.convertAndSend("topic/order-queue/" +eventDto.getStoreId());
+            messagingTemplate.convertAndSend("topic/order-queue/" +eventDto.getStoreId(),queueDto);
             log.info("[WS-PUBLISH] 선물 큐 발행 /topic/order-queue/{}", eventDto.getStoreId());
         }
     }

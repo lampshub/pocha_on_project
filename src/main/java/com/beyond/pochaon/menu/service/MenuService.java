@@ -1,25 +1,23 @@
 package com.beyond.pochaon.menu.service;
 
 
+import com.beyond.pochaon.common.auth.OwnerAuthHelper;
+import com.beyond.pochaon.common.auth.OwnerAuthHelper.OwnerContext;
 import com.beyond.pochaon.menu.domain.Category;
 import com.beyond.pochaon.menu.domain.Menu;
 import com.beyond.pochaon.menu.domain.MenuOption;
 import com.beyond.pochaon.menu.domain.MenuOptionDetail;
-import com.beyond.pochaon.menu.dtos.MenuCreateReqDto;
-import com.beyond.pochaon.menu.dtos.MenuResToOwnerDto;
-import com.beyond.pochaon.menu.dtos.MenuUpdateReqDto;
+import com.beyond.pochaon.menu.dto.MenuCreateReqDto;
+import com.beyond.pochaon.menu.dto.MenuResToOwnerDto;
+import com.beyond.pochaon.menu.dto.MenuUpdateReqDto;
 import com.beyond.pochaon.menu.repository.CategoryRepository;
 import com.beyond.pochaon.menu.repository.MenuRepository;
-import com.beyond.pochaon.owner.domain.Owner;
-import com.beyond.pochaon.owner.repository.OwnerRepository;
 import com.beyond.pochaon.store.domain.Store;
 import com.beyond.pochaon.store.repository.StoreRepository;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -34,42 +32,34 @@ import java.util.List;
 @Transactional
 public class MenuService {
     private final MenuRepository menuRepository;
-    private final OwnerRepository ownerRepository;
     private final StoreRepository storeRepository;
     private final CategoryRepository categoryRepository;
-    private final HttpServletRequest request;
     private final S3Client s3Client;
+    private final OwnerAuthHelper ownerAuthHelper;
 
     @Value("${aws.s3.bucket1}")
     private String bucket;
 
     @Autowired
-    public MenuService(MenuRepository menuRepository, OwnerRepository ownerRepository, StoreRepository storeRepository, CategoryRepository categoryRepository, HttpServletRequest request, S3Client s3Client) {
+    public MenuService(MenuRepository menuRepository, StoreRepository storeRepository, CategoryRepository categoryRepository,S3Client s3Client, OwnerAuthHelper ownerAuthHelper) {
         this.menuRepository = menuRepository;
-        this.ownerRepository = ownerRepository;
         this.storeRepository = storeRepository;
         this.categoryRepository = categoryRepository;
-        this.request = request;
         this.s3Client = s3Client;
+        this.ownerAuthHelper = ownerAuthHelper;
     }
 
     //    owner 메뉴 추가
     public Long createMenu(MenuCreateReqDto reqDto) throws AccessDeniedException {
-        String email = SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString();
-        Owner owner = ownerRepository.findByOwnerEmail(email).orElseThrow(() -> new EntityNotFoundException("Owner not found"));
+        OwnerContext ctx = ownerAuthHelper.getOwnerContext();
+        Store store = storeRepository.findById(ctx.getStoreId())
+                .orElseThrow(() -> new EntityNotFoundException("Store not found"));
+        ownerAuthHelper.verifyStoreOwnerShip(store, ctx.getOwner());
 
-        Long storeId = (Long) request.getAttribute("storeId");
-        if (storeId == null) {
-            throw new AccessDeniedException("매장 선택 후 이용가능합니다");
-        }
-        Store store = storeRepository.findById(storeId).orElseThrow(() -> new EntityNotFoundException("Store not found"));
-        if (!store.getOwner().getId().equals(owner.getId())) {
-            throw new AccessDeniedException("해당 권한이 없습니다");
-        }
-
-        Category category = categoryRepository.findById(reqDto.getCategoryId()).orElseThrow(() -> new EntityNotFoundException("Category not found"));
-
+        Category category = categoryRepository.findById(reqDto.getCategoryId())
+                .orElseThrow(() -> new EntityNotFoundException("Category not found"));
         Menu menu = menuRepository.save(reqDto.toEntity(category));
+
         if (reqDto.getMenuImage() != null && !reqDto.getMenuImage().isEmpty()) {
             String fileName = "menu-" + menu.getId() + "-" + reqDto.getMenuImage().getOriginalFilename();
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
@@ -83,31 +73,24 @@ public class MenuService {
                 throw new RuntimeException(e);
             }
             String imgUrl = s3Client.utilities().getUrl(a -> a.bucket(bucket).key(fileName)).toExternalForm();
-            menu.updateMenuImageUrl(imgUrl);    //S3에 업로드한 이미지URL 저장
+            menu.updateMenuImageUrl(imgUrl);
         }
         return menu.getId();
     }
 
 
+
     //    owner 메뉴 수정
     public void updateMenu(Long menuId, MenuUpdateReqDto reqDto) throws AccessDeniedException {
-        String email = SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString();
-        Owner owner = ownerRepository.findByOwnerEmail(email).orElseThrow(() -> new EntityNotFoundException("Owner not found"));
+        OwnerContext ctx = ownerAuthHelper.getOwnerContext();
+        Menu menu = menuRepository.findById(menuId)
+                .orElseThrow(() -> new EntityNotFoundException("Menu not found"));
+        ownerAuthHelper.verifyAll(menu.getCategory().getStore(), ctx);
 
-        Long storeId = (Long) request.getAttribute("storeId");
-        if (storeId == null) {
-            throw new AccessDeniedException("매장 선택 후 이용가능합니다");
-        }
-        Menu menu = menuRepository.findById(menuId).orElseThrow(() -> new EntityNotFoundException("Menu not found"));
-        if (!menu.getStore().getId().equals(storeId)) {
-            throw new AccessDeniedException("로그인된 매장의 메뉴가 아닙니다");
-        }
-        if (!menu.getStore().getOwner().getId().equals(owner.getId())) {
-            throw new AccessDeniedException("해당 권한이 없습니다");
-        }
         Category category = menu.getCategory();
         if (reqDto.getCategoryId() != null && !reqDto.getCategoryId().equals(category.getId())) {
-            category = categoryRepository.findById(reqDto.getCategoryId()).orElseThrow(() -> new EntityNotFoundException("Category not found"));
+            category = categoryRepository.findById(reqDto.getCategoryId())
+                    .orElseThrow(() -> new EntityNotFoundException("Category not found"));
         }
 
         menu.update(
@@ -119,13 +102,13 @@ public class MenuService {
         );
 
         if (reqDto.getMenuImage() != null && !reqDto.getMenuImage().isEmpty()) {
-            //기존 이미지가 null이 아니면 삭제
+//            기존 이미지가 null이 아닐경우 삭제
             if (menu.getMenuImageUrl() != null) {
                 String imgUrl = menu.getMenuImageUrl();
                 String fileName = imgUrl.substring(imgUrl.lastIndexOf("/") + 1);
                 s3Client.deleteObject(a -> a.bucket(bucket).key(fileName));
             }
-//            신규이미지 등록
+//            이미지 등록
             String newFileName = "menu-" + menu.getId() + "-" + reqDto.getMenuImage().getOriginalFilename();
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                     .bucket(bucket)
@@ -139,8 +122,8 @@ public class MenuService {
             }
             String newImgUrl = s3Client.utilities().getUrl(a -> a.bucket(bucket).key(newFileName)).toExternalForm();
             menu.updateMenuImageUrl(newImgUrl);
-        } else if (Boolean.TRUE.equals(reqDto.getDeleteImage())){
-//            이미지를 삭제 : deleteImage true로 설정
+        } else if (Boolean.TRUE.equals(reqDto.getDeleteImage())) {
+//          기존 이미지 삭제
             if (menu.getMenuImageUrl() != null) {
                 String imgUrl = menu.getMenuImageUrl();
                 String fileName = imgUrl.substring(imgUrl.lastIndexOf("/") + 1);
@@ -153,68 +136,57 @@ public class MenuService {
 
     //    owner 메뉴 삭제
     public void deleteMenu(Long menuId) throws AccessDeniedException {
-        String email = SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString();
-        Owner owner = ownerRepository.findByOwnerEmail(email)
-                .orElseThrow(() -> new EntityNotFoundException("Owner not found"));
+        OwnerContext ctx = ownerAuthHelper.getOwnerContext();
+        Menu menu = menuRepository.findById(menuId)
+                .orElseThrow(() -> new EntityNotFoundException("Menu not found"));
+        ownerAuthHelper.verifyAll(menu.getCategory().getStore(), ctx);
 
-        Long storeId = (Long) request.getAttribute("storeId");
-        if (storeId == null) {
-            throw new AccessDeniedException("매장 선택 후 이용가능합니다");
-        }
-        Menu menu = menuRepository.findById(menuId).orElseThrow(() -> new EntityNotFoundException("Menu not found"));
-        if (!menu.getStore().getId().equals(storeId)) {
-            throw new AccessDeniedException("로그인된 매장의 메뉴가 아닙니다");
-        }
-        if (!menu.getStore().getOwner().getId().equals(owner.getId())) {
-            throw new AccessDeniedException("해당 권한이 없습니다");
-        }
-        // 이미지 삭제
         if (menu.getMenuImageUrl() != null) {
             String imgUrl = menu.getMenuImageUrl();
-            String fileName = imgUrl.substring(imgUrl.lastIndexOf("/")+1);
+            String fileName = imgUrl.substring(imgUrl.lastIndexOf("/") + 1);
             s3Client.deleteObject(a -> a.bucket(bucket).key(fileName));
         }
-        // 메뉴 삭제
         menuRepository.delete(menu);
     }
 
-    @Transactional
+
+    @Transactional(readOnly = true)
 //    메뉴 상세 조회 (점주 메뉴 수정용)
     public MenuResToOwnerDto getMenuDetail(Long menuId) throws AccessDeniedException {
-        Long storeId = (Long) request.getAttribute("storeId");
-        if (storeId == null) throw new AccessDeniedException("매장 선택 후 이용가능합니다");
-
+        OwnerContext ctx = ownerAuthHelper.getOwnerContext();
         Menu menu = menuRepository.findDetailById(menuId)
                 .orElseThrow(() -> new EntityNotFoundException("Menu not found"));
 
         List<MenuResToOwnerDto.OptionDto> optionDtos = new ArrayList<>();
-
         for (MenuOption option : menu.getMenuOptionList()) {
             List<MenuResToOwnerDto.OptionDetailDto> detailDtos = new ArrayList<>();
-
             for (MenuOptionDetail detail : option.getMenuOptionDetailList()) {
                 detailDtos.add(MenuResToOwnerDto.OptionDetailDto.builder()
                         .optionDetailId(detail.getId())
                         .optionDetailName(detail.getOptionDetailName())
                         .optionDetailPrice(detail.getOptionDetailPrice())
+                        .maxQuantity(detail.getMaxQuantity())
                         .build());
             }
             optionDtos.add(MenuResToOwnerDto.OptionDto.builder()
                     .optionId(option.getId())
                     .optionName(option.getOptionName())
+                    .selectionType(option.getSelectionType())
+                    .minSelect(option.getMinSelect())
+                    .maxSelect(option.getMaxSelect())
                     .details(detailDtos)
                     .build());
         }
 
-            return MenuResToOwnerDto.builder()
-                    .menuName(menu.getMenuName())
-                    .price(menu.getPrice())
-                    .origin(menu.getOrigin())
-                    .explanation(menu.getExplanation())
-                    .imageUrl(menu.getMenuImageUrl())
-                    .categoryId(menu.getCategory().getId())
-                    .categoryName(menu.getCategory().getCategoryName())
-                    .options(optionDtos)
-                    .build();
-        }
+        return MenuResToOwnerDto.builder()
+                .menuName(menu.getMenuName())
+                .price(menu.getPrice())
+                .origin(menu.getOrigin())
+                .explanation(menu.getExplanation())
+                .imageUrl(menu.getMenuImageUrl())
+                .categoryId(menu.getCategory().getId())
+                .categoryName(menu.getCategory().getCategoryName())
+                .options(optionDtos)
+                .build();
+    }
 }

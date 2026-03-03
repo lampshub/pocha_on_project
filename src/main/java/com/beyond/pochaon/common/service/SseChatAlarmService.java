@@ -1,14 +1,17 @@
 package com.beyond.pochaon.common.service;
 
-import com.beyond.pochaon.common.dtos.SseChatAlarmDto;
+import com.beyond.pochaon.common.dto.SseChatAlarmDto;
 import com.beyond.pochaon.common.repository.SseChatAlarmRegistry;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.MessageListener;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -31,9 +34,10 @@ public class SseChatAlarmService implements MessageListener {
     }
 
     @Override
-    public void onMessage(Message message, byte[] pattern) {
+    public void onMessage(@NotNull Message message, @Nullable byte[] pattern) {
         try {
-            Map<String, Object> raw = objectMapper.readValue(message.getBody(), Map.class);
+            Map<String, Object> raw = objectMapper.readValue(message.getBody(), new TypeReference<>() {
+            });
             log.info("★ [SSE onMessage] 수신: {}", raw);
 
             // ★ 채팅 종료 이벤트 처리
@@ -47,12 +51,13 @@ public class SseChatAlarmService implements MessageListener {
                 for (int tableNum : new int[]{table1, table2}) {
                     String key = storeId + "-" + tableNum;
                     SseEmitter emitter = sseChatAlarmRegistry.getEmitter(key);
-                    log.info("★ [chat-closed] key={}, emitter존재={}", key, emitter != null);
                     if (emitter != null) {
                         emitter.send(SseEmitter.event()
                                 .name("chat-closed")
                                 .data(data));
-                        log.info("★ [chat-closed] key={}, emitter존재={}", key, emitter != null);
+                        log.info("[chat-closed] SSE 전송 완료 key={}", key);
+                    } else {
+                        log.info("[chat-closed] emitter 없음 key={}", key);
                     }
                 }
                 return; // ★ 여기서 리턴해야 아래 일반 알림 로직을 타지 않음
@@ -94,7 +99,7 @@ public class SseChatAlarmService implements MessageListener {
                         .data(data));
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("에러메시지: {}", e.getMessage());
         }
     }
 

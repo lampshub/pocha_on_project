@@ -6,9 +6,9 @@ import com.beyond.pochaon.customerTable.domain.CustomerTable;
 import com.beyond.pochaon.customerTable.domain.TableStatus;
 import com.beyond.pochaon.customerTable.repository.CustomerTableRepository;
 import com.beyond.pochaon.owner.domain.Owner;
-import com.beyond.pochaon.owner.dtos.BaseLoginDto;
-import com.beyond.pochaon.owner.dtos.OwnerCreateDto;
-import com.beyond.pochaon.owner.dtos.TokenDto;
+import com.beyond.pochaon.owner.dto.BaseLoginDto;
+import com.beyond.pochaon.owner.dto.OwnerCreateDto;
+import com.beyond.pochaon.owner.dto.TokenDto;
 import com.beyond.pochaon.owner.repository.OwnerRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -58,7 +58,7 @@ public class OwnerLoginService {
         Owner owner = jwtTokenProvider.validateRefreshToken(refreshToken);
 
 
-        // 3. 새로운 토큰 발급
+        // 2. 새로운 토큰 발급
         String newAccessToken =
                 jwtTokenProvider.createBaseAccessToken(
                         owner,

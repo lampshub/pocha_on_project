@@ -127,7 +127,7 @@ public class PaymentService {
 
             String paymentKey = responseBody.get("paymentKey").asText();
             String method = responseBody.has("method") ? responseBody.get("method").asText() : null;
-            String approvedAtStr = responseBody.has("approvedAt") ? responseBody.get("approvedAt").asText() : null;
+            String approvedAtStr = responseBody.has("processedAt") ? responseBody.get("processedAt").asText() : null;
 
             LocalDateTime approvedAt = null;
             if (approvedAtStr != null) {

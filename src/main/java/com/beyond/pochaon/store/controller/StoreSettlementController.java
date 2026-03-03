@@ -1,7 +1,7 @@
 package com.beyond.pochaon.store.controller;
 
+import com.beyond.pochaon.store.dto.PeriodReqDto;
 import com.beyond.pochaon.store.service.StoreSettlementService;
-import com.beyond.pochaon.store.settlementdto.PeriodReqDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -35,12 +35,13 @@ public class StoreSettlementController {
         return ResponseEntity.ok(storeSettlementService.getMonthlySettlement(storeId, dto));
     }
 
-//    메뉴 분석
+    //    메뉴 분석
     @GetMapping("/menuanalysis")
     public ResponseEntity<?> getMenuAnalysis(@RequestAttribute Long storeId,
                                              @ModelAttribute PeriodReqDto dto) {
         return ResponseEntity.ok(storeSettlementService.getMenuAnalysis(storeId, dto));
     }
+
     // 매출 분석
     @GetMapping("/salesanalysis")
     public ResponseEntity<?> getSalesAnalysis(
@@ -66,6 +67,12 @@ public class StoreSettlementController {
             @ModelAttribute PeriodReqDto dto
     ) {
         return ResponseEntity.ok(storeSettlementService.getTableAnalysis(storeId, dto));
+    }
+
+    @GetMapping("/ingredient")
+    public ResponseEntity<?> getIngredientSummary(@RequestAttribute Long storeId, @ModelAttribute PeriodReqDto dto) {
+        return ResponseEntity.ok(storeSettlementService.getIngredientSummary(storeId, dto));
+
     }
 
 }

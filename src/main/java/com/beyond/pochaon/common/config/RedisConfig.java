@@ -1,7 +1,7 @@
 package com.beyond.pochaon.common.config;
 
 import com.beyond.pochaon.cart.domain.RedisCartItem;
-import com.beyond.pochaon.common.service.SseAlramService;
+import com.beyond.pochaon.common.service.SseAlarmService;
 import com.beyond.pochaon.common.service.SseChatAlarmService;
 import com.beyond.pochaon.common.web.WebSubscriber;
 import com.beyond.pochaon.present.dto.OwnerEventDto;
@@ -63,11 +63,6 @@ public class RedisConfig {
     private String smsHost;
     @Value("${spring.redis.port6}")
     private int smsPort;
-
-    @Value("${spring.redis.host7}")
-    private String schedulerHost;
-    @Value("${spring.redis.port7}")
-    private int schedulerPort;
 
     @Value("${spring.redis.host8}")
     private String host8;
@@ -169,41 +164,6 @@ public class RedisConfig {
         return t;
     }
 
-
-    // Scheduler Redis
-
-    @Bean
-    @Qualifier("schedularRedis")
-    public RedisConnectionFactory schedularRedisConnectionFactory() {
-        RedisStandaloneConfiguration configuration = new RedisStandaloneConfiguration();
-        configuration.setHostName(schedulerHost);
-        configuration.setPort(schedulerPort);
-        configuration.setDatabase(0);
-        return new LettuceConnectionFactory(configuration);
-    }
-
-
-//    // Owner ↔ Guest Redis
-//    @Bean("ownerGuestConnection")
-//    public RedisConnectionFactory ownerGuestConnectionFactory() {
-//        RedisStandaloneConfiguration config = new RedisStandaloneConfiguration();
-//        config.setHostName(ownerGuestHost);
-//        config.setPort(ownerGuestPort);
-//        config.setDatabase(0);
-//        return new LettuceConnectionFactory(config);
-//    }
-//
-//    @Bean("ownerGuest")
-//    public RedisTemplate<String, String> ownerGuestRedisTemplate(
-//            @Qualifier("ownerGuestConnection") RedisConnectionFactory factory) {
-//        RedisTemplate<String, String> t = new RedisTemplate<>();
-//        t.setConnectionFactory(factory);
-//        t.setKeySerializer(new StringRedisSerializer());
-//        t.setValueSerializer(new StringRedisSerializer());
-//        return t;
-//    }
-
-
     //    직원호출용
     @Bean
     @Qualifier("ssePubSub")
@@ -236,8 +196,8 @@ public class RedisConfig {
 
     @Bean
     @Qualifier("ssePubSub")
-    public MessageListenerAdapter messageListenerAdapter(SseAlramService sseAlramService) {
-        return new MessageListenerAdapter(sseAlramService, "onMessage");
+    public MessageListenerAdapter messageListenerAdapter(SseAlarmService sseAlarmService) {
+        return new MessageListenerAdapter(sseAlarmService, "onMessage");
     }
 
     //    채팅알림

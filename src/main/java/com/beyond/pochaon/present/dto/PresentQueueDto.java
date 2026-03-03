@@ -15,6 +15,7 @@ import java.util.List;
 @Builder
 public class PresentQueueDto {
     private Long orderingId; // 주문 ID
+    @Builder.Default
     private String type = "PRESENT";
     private Long senderTableId; // 발신 테이블 번호
     private Long receiverTableId; // 수신 테이블 번호
@@ -28,7 +29,8 @@ public class PresentQueueDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class PresentDetail {
-        private String menuName; //메뉴명
-        private int quantity; //수량
+        private String menuName;
+        private int menuPrice;
+        private int quantity;
     }
 }

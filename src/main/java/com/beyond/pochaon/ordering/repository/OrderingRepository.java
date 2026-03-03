@@ -24,14 +24,6 @@ public interface OrderingRepository extends JpaRepository<Ordering, Long> {
             "WHERE o.groupId IN :groupIds")
     List<Ordering> findByGroupIdIn(@Param("groupIds") Collection<UUID> groupIds);
 
-    //    취소된 주문리스트 찾기
-    List<Ordering> findByOrderStatusOrderByIdDesc(OrderStatus status);
-
-    //    테스트용
-    // 해당 매장의 가장 오래된 주문 시간 조회 (백필 시작점)
-    @Query("SELECT MIN(o.createTimeAt) FROM Ordering o WHERE o.customerTable.store.id = :storeId")
-    LocalDateTime findEarliestOrderDate(@Param("storeId") Long storeId);
-
     //    매장의 standBy 상태로 주문 조회
 //    조인해서 매장별 필터링 / 오래된 주문이 위로
     @Query("SELECT DISTINCT o FROM Ordering o JOIN FETCH o.customerTable ct JOIN FETCH ct.store LEFT JOIN " +
@@ -98,11 +90,26 @@ public interface OrderingRepository extends JpaRepository<Ordering, Long> {
             "JOIN FETCH o.customerTable ct " +
             "LEFT JOIN FETCH o.orderDetail od " +
             "LEFT JOIN FETCH od.menu m " +
+            "LEFT JOIN FETCH m.category " +
             "WHERE ct.store.id = :storeId " +
             "AND o.paymentState = 'DONE' " +
             "AND o.createTimeAt >= :startAt AND o.createTimeAt < :endAt " +
             "ORDER BY o.createTimeAt DESC")
     List<Ordering> findCompletedOrdersWithDetails(@Param("storeId") Long storeId,
+                                                  @Param("startAt") LocalDateTime startAt,
+                                                  @Param("endAt") LocalDateTime endAt);
+
+    // 취소된 주문 조회 (일별 정산 모달용)
+    @Query("SELECT DISTINCT o FROM Ordering o " +
+            "JOIN FETCH o.customerTable ct " +
+            "LEFT JOIN FETCH o.orderDetail od " +
+            "LEFT JOIN FETCH od.menu m " +
+            "LEFT JOIN FETCH m.category " +
+            "WHERE ct.store.id = :storeId " +
+            "AND o.orderStatus = 'CANCELLED' " +
+            "AND o.createTimeAt >= :startAt AND o.createTimeAt < :endAt " +
+            "ORDER BY o.createTimeAt DESC")
+    List<Ordering> findCancelledOrdersWithDetails(@Param("storeId") Long storeId,
                                                   @Param("startAt") LocalDateTime startAt,
                                                   @Param("endAt") LocalDateTime endAt);
 
@@ -155,4 +162,141 @@ public interface OrderingRepository extends JpaRepository<Ordering, Long> {
     List<Object[]> countGroupsByTable(@Param("storeId") Long storeId,
                                       @Param("startAt") LocalDateTime startAt,
                                       @Param("endAt") LocalDateTime endAt);
+
+
+    /**
+     * 일별 매출/주문건수/취소건수 breakdown (주간·월간 달력용)
+     * 반환: [날짜(java.sql.Date), 매출합계(Long), 완료주문수(Long), 취소주문수(Long)]
+     */
+    @Query(value = "SELECT DATE(o.create_time_at) AS sale_date, " +
+            "COALESCE(SUM(CASE WHEN o.payment_state = 'DONE' THEN o.total_price ELSE 0 END), 0), " +
+            "COUNT(DISTINCT CASE WHEN o.payment_state = 'DONE' THEN o.id END), " +
+            "COUNT(DISTINCT CASE WHEN o.order_status = 'CANCELLED' THEN o.id END) " +
+            "FROM ordering o " +
+            "JOIN customer_table ct ON o.table_id = ct.customer_table_id " +
+            "WHERE ct.store_id = :storeId " +
+            "AND o.create_time_at >= :startAt AND o.create_time_at < :endAt " +
+            "GROUP BY DATE(o.create_time_at) " +
+            "ORDER BY sale_date",
+            nativeQuery = true)
+    List<Object[]> sumSalesByDate(@Param("storeId") Long storeId,
+                                  @Param("startAt") LocalDateTime startAt,
+                                  @Param("endAt") LocalDateTime endAt);
+
+    /**
+     * 일별 테이블 이용 횟수 (distinct groupId)
+     * 반환: [날짜(java.sql.Date), 이용횟수(Long)]
+     */
+    @Query(value = "SELECT DATE(o.create_time_at) AS sale_date, " +
+            "COUNT(DISTINCT o.group_id) " +
+            "FROM ordering o " +
+            "JOIN customer_table ct ON o.table_id = ct.customer_table_id " +
+            "WHERE ct.store_id = :storeId " +
+            "AND o.payment_state = 'DONE' " +
+            "AND o.create_time_at >= :startAt AND o.create_time_at < :endAt " +
+            "GROUP BY DATE(o.create_time_at) " +
+            "ORDER BY sale_date",
+            nativeQuery = true)
+    List<Object[]> countGroupIdsByDate(@Param("storeId") Long storeId,
+                                       @Param("startAt") LocalDateTime startAt,
+                                       @Param("endAt") LocalDateTime endAt);
+
+    /**
+     * 월별 매출 합계 (연간 차트용)
+     * 반환: [월(Integer), 매출합계(Long)]
+     */
+    @Query(value = "SELECT MONTH(o.create_time_at), " +
+            "COALESCE(SUM(CASE WHEN o.payment_state = 'DONE' THEN o.total_price ELSE 0 END), 0) " +
+            "FROM ordering o " +
+            "JOIN customer_table ct ON o.table_id = ct.customer_table_id " +
+            "WHERE ct.store_id = :storeId " +
+            "AND YEAR(o.create_time_at) = :year " +
+            "GROUP BY MONTH(o.create_time_at) " +
+            "ORDER BY MONTH(o.create_time_at)",
+            nativeQuery = true)
+    List<Object[]> sumSalesByMonth(@Param("storeId") Long storeId,
+                                   @Param("year") int year);
+
+    // ══════════════════════════════════════════════
+    //  ★ 전체 매장 배치 쿼리 (N+1 방지)
+    // ══════════════════════════════════════════════
+
+    // 다중 매장 합산 매출
+    @Query("SELECT COALESCE(SUM(o.totalPrice), 0) FROM Ordering o " +
+            "WHERE o.customerTable.store.id IN :storeIds " +
+            "AND o.paymentState = 'DONE' " +
+            "AND o.createTimeAt >= :startAt AND o.createTimeAt < :endAt")
+    int sumTotalRevenueByStores(@Param("storeIds") List<Long> storeIds,
+                                @Param("startAt") LocalDateTime startAt,
+                                @Param("endAt") LocalDateTime endAt);
+
+    // 다중 매장 완료 주문 수
+    @Query("SELECT COUNT(DISTINCT o.id) FROM Ordering o " +
+            "WHERE o.customerTable.store.id IN :storeIds " +
+            "AND o.paymentState = 'DONE' " +
+            "AND o.createTimeAt >= :startAt AND o.createTimeAt < :endAt")
+    int countCompletedOrdersByStores(@Param("storeIds") List<Long> storeIds,
+                                     @Param("startAt") LocalDateTime startAt,
+                                     @Param("endAt") LocalDateTime endAt);
+
+    // 다중 매장 취소 주문 수
+    @Query("SELECT COUNT(DISTINCT o.id) FROM Ordering o " +
+            "WHERE o.customerTable.store.id IN :storeIds " +
+            "AND o.orderStatus = 'CANCELLED' " +
+            "AND o.createTimeAt >= :startAt AND o.createTimeAt < :endAt")
+    int countCancelledOrdersByStores(@Param("storeIds") List<Long> storeIds,
+                                     @Param("startAt") LocalDateTime startAt,
+                                     @Param("endAt") LocalDateTime endAt);
+
+    // 다중 매장 일별 매출 합산
+    @Query(value = "SELECT DATE(o.create_time_at) AS sale_date, SUM(o.total_price) AS total " +
+            "FROM ordering o " +
+            "JOIN customer_table ct ON o.table_id = ct.customer_table_id " +
+            "WHERE ct.store_id IN :storeIds " +
+            "AND o.payment_state = 'DONE' " +
+            "AND o.create_time_at >= :startAt AND o.create_time_at < :endAt " +
+            "GROUP BY DATE(o.create_time_at) ORDER BY sale_date",
+            nativeQuery = true)
+    List<Object[]> sumSalesByDateForStores(@Param("storeIds") List<Long> storeIds,
+                                           @Param("startAt") LocalDateTime startAt,
+                                           @Param("endAt") LocalDateTime endAt);
+
+    // 매장별 매출/주문 수 (비교 탭용 — 1쿼리로 전 매장 조회)
+    @Query(value = "SELECT ct.store_id, " +
+            "COALESCE(SUM(o.total_price), 0), " +
+            "COUNT(DISTINCT o.id) " +
+            "FROM ordering o " +
+            "JOIN customer_table ct ON o.table_id = ct.customer_table_id " +
+            "WHERE ct.store_id IN :storeIds " +
+            "AND o.payment_state = 'DONE' " +
+            "AND o.create_time_at >= :startAt AND o.create_time_at < :endAt " +
+            "GROUP BY ct.store_id",
+            nativeQuery = true)
+    List<Object[]> sumRevenuePerStore(@Param("storeIds") List<Long> storeIds,
+                                      @Param("startAt") LocalDateTime startAt,
+                                      @Param("endAt") LocalDateTime endAt);
+
+    // 다중 매장 시간대별 매출 합산
+    @Query("SELECT FUNCTION('HOUR', o.createTimeAt), COALESCE(SUM(o.totalPrice), 0) " +
+            "FROM Ordering o " +
+            "WHERE o.customerTable.store.id IN :storeIds " +
+            "AND o.paymentState = 'DONE' " +
+            "AND o.createTimeAt >= :startAt AND o.createTimeAt < :endAt " +
+            "GROUP BY FUNCTION('HOUR', o.createTimeAt) " +
+            "ORDER BY FUNCTION('HOUR', o.createTimeAt)")
+    List<Object[]> sumSalesByHourForStores(@Param("storeIds") List<Long> storeIds,
+                                           @Param("startAt") LocalDateTime startAt,
+                                           @Param("endAt") LocalDateTime endAt);
+
+    // 다중 매장 요일별 매출 합산
+    @Query("SELECT FUNCTION('DAYOFWEEK', o.createTimeAt), COALESCE(SUM(o.totalPrice), 0) " +
+            "FROM Ordering o " +
+            "WHERE o.customerTable.store.id IN :storeIds " +
+            "AND o.paymentState = 'DONE' " +
+            "AND o.createTimeAt >= :startAt AND o.createTimeAt < :endAt " +
+            "GROUP BY FUNCTION('DAYOFWEEK', o.createTimeAt) " +
+            "ORDER BY FUNCTION('DAYOFWEEK', o.createTimeAt)")
+    List<Object[]> sumSalesByDayOfWeekForStores(@Param("storeIds") List<Long> storeIds,
+                                                @Param("startAt") LocalDateTime startAt,
+                                                @Param("endAt") LocalDateTime endAt);
 }

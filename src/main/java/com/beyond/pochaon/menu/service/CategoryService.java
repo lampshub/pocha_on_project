@@ -1,95 +1,59 @@
 package com.beyond.pochaon.menu.service;
 
+import com.beyond.pochaon.common.auth.OwnerAuthHelper;
+import com.beyond.pochaon.common.auth.OwnerAuthHelper.OwnerContext;
 import com.beyond.pochaon.menu.domain.Category;
-import com.beyond.pochaon.menu.dtos.CategoryReqDto;
+import com.beyond.pochaon.menu.dto.CategoryReqDto;
 import com.beyond.pochaon.menu.repository.CategoryRepository;
-import com.beyond.pochaon.owner.domain.Owner;
-import com.beyond.pochaon.owner.repository.OwnerRepository;
 import com.beyond.pochaon.store.domain.Store;
 import com.beyond.pochaon.store.repository.StoreRepository;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.nio.file.AccessDeniedException;
 
 @Service
 @Transactional
 public class CategoryService {
-    private final OwnerRepository ownerRepository;
-    private final HttpServletRequest request;
     private final StoreRepository storeRepository;
     private final CategoryRepository categoryRepository;
+    private final OwnerAuthHelper ownerAuthHelper;
+
+
     @Autowired
-    public CategoryService(OwnerRepository ownerRepository, HttpServletRequest request, StoreRepository storeRepository, CategoryRepository categoryRepository) {
-        this.ownerRepository = ownerRepository;
-        this.request = request;
+    public CategoryService(StoreRepository storeRepository, CategoryRepository categoryRepository, OwnerAuthHelper ownerAuthHelper) {
         this.storeRepository = storeRepository;
         this.categoryRepository = categoryRepository;
+        this.ownerAuthHelper = ownerAuthHelper;
     }
 
 
     //    카테고리 추가
-    public Long createCategory(CategoryReqDto reqDto) throws AccessDeniedException {
-        String email = SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString();
-        Owner owner = ownerRepository.findByOwnerEmail(email).orElseThrow(() -> new EntityNotFoundException("Owner not found"));
-        Long storeId = (Long) request.getAttribute("storeId");
-        if (storeId == null) {
-            throw new AccessDeniedException("매장 선택 후 이용가능합니다");
-        }
-        Store store = storeRepository.findById(storeId).orElseThrow(() -> new EntityNotFoundException("Store not found"));
-        if (!store.getOwner().getId().equals(owner.getId())) {
-            throw new AccessDeniedException("해당 권한이 없습니다");
-        }
+    public void createCategory(CategoryReqDto reqDto) {
+        OwnerContext ctx = ownerAuthHelper.getOwnerContext();
+        Store store = storeRepository.findById(ctx.getStoreId()).orElseThrow(() -> new EntityNotFoundException("Store not found"));
+        ownerAuthHelper.verifyStoreOwnerShip(store, ctx.getOwner());
         Category category = reqDto.toEntity(store);
         categoryRepository.save(category);
-        return category.getId();
     }
 
 
-//    카테고리 수정
-    public Long updateCategory(Long categoryId, CategoryReqDto reqDto) throws AccessDeniedException {
-        String email = SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString();
-        Owner owner = ownerRepository.findByOwnerEmail(email).orElseThrow(() -> new EntityNotFoundException("Owner not found"));
-        Long storeId = (Long) request.getAttribute("storeId");
-        if (storeId == null) {
-            throw new AccessDeniedException("매장 선택 후 이용가능합니다");
-        }
-        Category category = categoryRepository.findById(categoryId).orElseThrow(() -> new EntityNotFoundException("Category not found"));
-        if (!category.getStore().getOwner().getId().equals(owner.getId())) {
-            throw new AccessDeniedException("해당 권한이 없습니다");
-        }
-        if (!category.getStore().getId().equals(storeId)) {
-            throw new AccessDeniedException("해당 매장의 카테고리가 아닙니다");
-        }
-
+    //    카테고리 수정
+    public void updateCategory(Long categoryId, CategoryReqDto reqDto) {
+        OwnerContext ctx = ownerAuthHelper.getOwnerContext();
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new EntityNotFoundException("Category not found"));
+        ownerAuthHelper.verifyAll(category.getStore(), ctx);
         category.updateName(reqDto.getCategoryName());
-        return category.getId();
     }
 
-//    카테고리 삭제
-    public void deleteCategory(Long categoryId) throws AccessDeniedException {
-        String email = SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString();
-        Owner owner = ownerRepository.findByOwnerEmail(email)
-                .orElseThrow(() -> new EntityNotFoundException("Owner not found"));
-
-        Long storeId = (Long) request.getAttribute("storeId");
-        if (storeId == null) {
-            throw new AccessDeniedException("해당 권한이 없습니다");
-        }
-        Category category = categoryRepository.findById(categoryId).orElseThrow(() -> new EntityNotFoundException("Category not found"));
-        if (!category.getStore().getOwner().getId().equals(owner.getId())) {
-            throw new AccessDeniedException("해당 권한이 없습니다");
-        }
-        if (!category.getStore().getId().equals(storeId)) {
-            throw new AccessDeniedException("해당 매장의 카테고리가 아닙니다");
-        }
-
+    //    카테고리 삭제
+    public void deleteCategory(Long categoryId) {
+        OwnerContext ctx = ownerAuthHelper.getOwnerContext();
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new EntityNotFoundException("Category not found"));
+        ownerAuthHelper.verifyAll(category.getStore(), ctx);
         categoryRepository.delete(category);
-
     }
-
 }

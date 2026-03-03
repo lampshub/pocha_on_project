@@ -19,6 +19,12 @@ public class MenuOption {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String optionName;
+    @Enumerated(EnumType.STRING)
+    private SelectionType selectionType;
+
+    private Integer minSelect;
+    private Integer maxSelect;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "menu_id", foreignKey = @ForeignKey(ConstraintMode.CONSTRAINT), nullable = false)
     private Menu menu;
@@ -26,19 +32,22 @@ public class MenuOption {
     @Builder.Default
     private List<MenuOptionDetail> menuOptionDetailList= new ArrayList<>();
 
-    public void update(String optionName){
+    public void update(String optionName, SelectionType selectionType, Integer maxSelect, Integer minSelect){
         this.optionName = optionName;
+        this.selectionType = selectionType;
+        this.minSelect =minSelect;
+        this.maxSelect =minSelect;
     }
 
+    @PrePersist
+    public void setDefaults() {
+        if(this.selectionType == SelectionType.SINGLE){
+            this.minSelect = 1;
+            this.maxSelect = 1;
+        } else {
+            if(this.minSelect == null) this.minSelect = 0;
+            if(this.maxSelect == null) this.maxSelect = menuOptionDetailList.size();
+        }
+    }
 
-//    메뉴 옵션상세 cascade필요시 사용
-//    public void addMenuOptionDetail(MenuOptionDetail detail){
-//        menuOptionDetailList.add(detail);
-//        detail.setMenuOption(this);
-//    }
-//
-//    public void removeMenuOptionDetail(MenuOptionDetail detail) {
-//        menuOptionDetailList.remove(detail);
-//        detail.setMenuOption(null);
-//    }
 }

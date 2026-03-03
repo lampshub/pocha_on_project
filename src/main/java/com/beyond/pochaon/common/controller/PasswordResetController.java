@@ -1,7 +1,7 @@
 package com.beyond.pochaon.common.controller;
 
 
-import com.beyond.pochaon.common.dtos.PasswordResetReqDto;
+import com.beyond.pochaon.common.dto.PasswordResetReqDto;
 import com.beyond.pochaon.common.service.PasswordResetService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;

@@ -2,8 +2,8 @@ package com.beyond.pochaon.chat.controller;
 
 import com.beyond.pochaon.chat.domain.ChatMessage;
 import com.beyond.pochaon.chat.domain.ChatRoom;
-import com.beyond.pochaon.chat.dtos.ChatRoomCreateReqDto;
-import com.beyond.pochaon.chat.dtos.ChatRoomDto;
+import com.beyond.pochaon.chat.dto.ChatRoomCreateReqDto;
+import com.beyond.pochaon.chat.dto.ChatRoomDto;
 import com.beyond.pochaon.chat.service.ChatService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;

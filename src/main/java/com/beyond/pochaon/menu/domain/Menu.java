@@ -29,6 +29,10 @@ public class Menu {
     @JoinColumn(name = "category_id",foreignKey = @ForeignKey(ConstraintMode.CONSTRAINT), nullable = false)
     private Category category;
 
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    private MenuStatus status = MenuStatus.SALE;
+
     @OneToMany(mappedBy = "menu", fetch = FetchType.LAZY,  cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<MenuOption> menuOptionList= new ArrayList<>();
@@ -43,6 +47,11 @@ public class Menu {
         this.origin = origin;
         this.explanation = explanation;
         this.category = category;
+    }
+
+
+    public void updateStatus(MenuStatus status) {
+        this.status = status;
     }
 
 }

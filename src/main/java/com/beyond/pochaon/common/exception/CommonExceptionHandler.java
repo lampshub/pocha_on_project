@@ -1,8 +1,9 @@
 package com.beyond.pochaon.common.exception;
 
-import com.beyond.pochaon.common.dtos.CommonErrorDto;
+import com.beyond.pochaon.common.dto.CommonErrorDto;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,12 +16,13 @@ import org.springframework.web.client.RestClientException;
 
 import java.util.NoSuchElementException;
 
+@Slf4j
 @RestControllerAdvice
 public class CommonExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<?> illegal(IllegalArgumentException e) {
-        e.printStackTrace();
+        log.error("에러 메시지", e);
         CommonErrorDto ce_dto = CommonErrorDto.builder()
                 .statusCode(400)
                 .errorMessage(e.getMessage())
@@ -30,7 +32,7 @@ public class CommonExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<?> notValid(MethodArgumentNotValidException e) {
-        e.printStackTrace();
+        log.error("에러 메시지", e);
         CommonErrorDto ce_dto = CommonErrorDto.builder()
                 .statusCode(400)
                 .errorMessage(e.getFieldError().getDefaultMessage())
@@ -40,7 +42,7 @@ public class CommonExceptionHandler {
 
     @ExceptionHandler(NoSuchElementException.class)
     public ResponseEntity<?> noSuch(NoSuchElementException e) {
-        e.printStackTrace();
+        log.error("에러 메시지", e);
         CommonErrorDto ce_dto = CommonErrorDto.builder()
                 .statusCode(404)
                 .errorMessage(e.getMessage())
@@ -50,14 +52,14 @@ public class CommonExceptionHandler {
 
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<?> notfoundEntity(EntityNotFoundException e) {
-        e.printStackTrace();
+        log.error("에러 메시지", e);
         CommonErrorDto ce_dto = CommonErrorDto.builder().statusCode(404).errorMessage(e.getMessage()).build();
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ce_dto);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<?> accessDenied(AccessDeniedException e) {
-        e.printStackTrace();
+        log.error("에러 메시지", e);
         CommonErrorDto ce_dto = CommonErrorDto.builder()
                 .statusCode(403)
                 .errorMessage(e.getMessage())
@@ -67,7 +69,7 @@ public class CommonExceptionHandler {
 
     @ExceptionHandler(AuthorizationDeniedException.class)
     public ResponseEntity<?> autho(AuthorizationDeniedException e) {
-        e.printStackTrace();
+        log.error("에러 메시지", e);
         CommonErrorDto ce_dto = CommonErrorDto.builder()
                 .statusCode(403)
                 .errorMessage(e.getMessage())
@@ -77,7 +79,7 @@ public class CommonExceptionHandler {
 
     @ExceptionHandler(SecurityException.class)
     public ResponseEntity<?> security(SecurityException e) {
-        e.printStackTrace();
+        log.error("에러 메시지", e);
         CommonErrorDto ce_dto = CommonErrorDto.builder()
                 .statusCode(401)
                 .errorMessage(e.getMessage())
@@ -87,7 +89,7 @@ public class CommonExceptionHandler {
 
     @ExceptionHandler(RestClientException .class)
     public ResponseEntity<?> client(@NonNull RestClientException e) {
-        e.printStackTrace();
+        log.error("에러 메시지", e);
         CommonErrorDto ce_dto = CommonErrorDto.builder()
                 .statusCode(404)
                 .errorMessage(e.getMessage())
@@ -97,7 +99,7 @@ public class CommonExceptionHandler {
 
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<?> state(@NonNull IllegalStateException e) {
-        e.printStackTrace();
+        log.error("에러 메시지", e);
         CommonErrorDto ce_dto = CommonErrorDto.builder()
                 .statusCode(404)
                 .errorMessage(e.getMessage())
@@ -122,8 +124,7 @@ public class CommonExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> exception(Exception e) {
-        e.printStackTrace();
-
+        log.error("에러 메시지", e);
         CommonErrorDto ce_dto = CommonErrorDto.builder()
                 .statusCode(500)
                 .errorMessage("서버 내부 오류가 발생했습니다")

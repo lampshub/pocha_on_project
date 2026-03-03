@@ -2,7 +2,7 @@ package com.beyond.pochaon.chat.controller;
 
 
 import com.beyond.pochaon.chat.domain.ChatMessage;
-import com.beyond.pochaon.chat.dtos.ChatMessageDto;
+import com.beyond.pochaon.chat.dto.ChatMessageDto;
 import com.beyond.pochaon.chat.service.ChatService;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;

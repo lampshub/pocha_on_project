@@ -1,6 +1,6 @@
 package com.beyond.pochaon.menu.controller;
 
-import com.beyond.pochaon.menu.dtos.MenuOptionDetailReqDto;
+import com.beyond.pochaon.menu.dto.MenuOptionDetailReqDto;
 import com.beyond.pochaon.menu.service.MenuOptionDetailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

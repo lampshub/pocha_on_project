@@ -4,6 +4,7 @@ package com.beyond.pochaon.common.controller;
 import com.beyond.pochaon.common.auth.JwtTokenProvider;
 import com.beyond.pochaon.common.repository.SseChatAlarmRegistry;
 import com.beyond.pochaon.common.service.SseChatAlarmService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -12,6 +13,7 @@ import java.io.IOException;
 
 @RestController
 @RequestMapping("/sseChat")
+@Slf4j
 public class SseChatAlarmController {
 
     private final SseChatAlarmRegistry sseChatAlarmRegistry;
@@ -42,7 +44,7 @@ public class SseChatAlarmController {
         String token = authorization.replace("Bearer", "");
         Long storeId = jwtTokenProvider.getStoreId(token);
         int senderTable = jwtTokenProvider.getTableNum(token);
-        System.out.println("disconnect start");
+        log.info("disconnect start");
         sseChatAlarmRegistry.removeEmitter(storeId + "-" + senderTable);
     }
 

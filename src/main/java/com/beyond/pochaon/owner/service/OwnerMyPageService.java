@@ -2,8 +2,8 @@ package com.beyond.pochaon.owner.service;
 
 import com.beyond.pochaon.common.service.EmailAuthService;
 import com.beyond.pochaon.owner.domain.Owner;
-import com.beyond.pochaon.owner.dtos.MyPageResDto;
-import com.beyond.pochaon.owner.dtos.UpdatePasswordReqDto;
+import com.beyond.pochaon.owner.dto.MyPageResDto;
+import com.beyond.pochaon.owner.dto.UpdatePasswordReqDto;
 import com.beyond.pochaon.owner.repository.OwnerRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;

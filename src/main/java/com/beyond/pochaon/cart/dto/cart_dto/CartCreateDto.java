@@ -15,27 +15,38 @@ import java.util.List;
 public class CartCreateDto {
     private Long tableId;
     @Builder.Default
-    private List<CartCreateDetailDto> createDetailDto= new ArrayList<>();
+    private List<CreateDetailDto> createDetailList = new ArrayList<>();
 
     @AllArgsConstructor
     @NoArgsConstructor
     @Data
     @Builder
-    public static class CartCreateDetailDto {
+    public static class CreateDetailDto {
         private Long menuId;
         private int menuQuantity;
         @Builder.Default
-        private List<CreateOptionId> optionId= new ArrayList<>();
+        private List<CreateOptionDto> optionList = new ArrayList<>();
+
+
+        @AllArgsConstructor
+        @NoArgsConstructor
+        @Data
+        @Builder
+        public static class CreateOptionDto {
+            private Long optionId;
+            @Builder.Default
+            private List<CreateOptionDetailDto> optionDetailList = new ArrayList<>();
+
+
+            @AllArgsConstructor
+            @NoArgsConstructor
+            @Data
+            @Builder
+            public static class CreateOptionDetailDto {
+                private Long optionDetailId;
+                private int optionDetailQuantity;
+            }
+        }
     }
 
-    @AllArgsConstructor
-    @NoArgsConstructor
-    @Data
-    @Builder
-    public static class CreateOptionId {
-        private Long optionId;
-        @Builder.Default
-        private List<Long> optionDetailId= new ArrayList<>();
-    }
 }
-

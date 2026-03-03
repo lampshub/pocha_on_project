@@ -1,7 +1,6 @@
 package com.beyond.pochaon.owner.controller;
 
-import com.beyond.pochaon.common.auth.JwtTokenProvider;
-import com.beyond.pochaon.owner.dtos.*;
+import com.beyond.pochaon.owner.dto.*;
 import com.beyond.pochaon.owner.service.OwnerLoginService;
 import com.beyond.pochaon.owner.service.OwnerMyPageService;
 import com.beyond.pochaon.owner.service.OwnerService;
@@ -20,7 +19,7 @@ public class OwnerController {
     private final OwnerMyPageService ownerMyPageService;
 
     @Autowired
-    public OwnerController(OwnerService ownerService, OwnerLoginService ownerLoginService, JwtTokenProvider jwtTokenProvider, OwnerMyPageService ownerMyPageService) {
+    public OwnerController(OwnerService ownerService, OwnerLoginService ownerLoginService,  OwnerMyPageService ownerMyPageService) {
         this.ownerService = ownerService;
         this.ownerLoginService = ownerLoginService;
         this.ownerMyPageService = ownerMyPageService;

@@ -1,8 +1,7 @@
 package com.beyond.pochaon.common.exception;
 
-import com.beyond.pochaon.common.dtos.CommonErrorDto;
+import com.beyond.pochaon.common.dto.CommonErrorDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.core.AuthenticationException;
@@ -21,7 +20,7 @@ public class JwtAuthenticationHandler implements AuthenticationEntryPoint {
     }
 
     @Override
-    public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException, ServletException {
+    public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException {
 //        startline + header 조립
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // 401상태코드 세팅
         response.setContentType("application/json");

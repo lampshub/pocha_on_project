@@ -2,8 +2,8 @@ package com.beyond.pochaon.chat.service;
 
 import com.beyond.pochaon.chat.domain.ChatMessage;
 import com.beyond.pochaon.chat.domain.ChatRoom;
-import com.beyond.pochaon.chat.dtos.ChatMessageDto;
-import com.beyond.pochaon.chat.dtos.ChatRoomDto;
+import com.beyond.pochaon.chat.dto.ChatMessageDto;
+import com.beyond.pochaon.chat.dto.ChatRoomDto;
 import com.beyond.pochaon.chat.repository.ChatRoomRepository;
 import com.beyond.pochaon.customerTable.domain.CustomerTable;
 import com.beyond.pochaon.customerTable.repository.CustomerTableRepository;

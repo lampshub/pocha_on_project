@@ -14,11 +14,13 @@ import java.util.List;
 public class RedisCartItem {
     private Long menuId;
     private String menuName;
+    private int menuPrice;
     private String optionKey; // 내부비교
-    @Builder.Default
-    private List<CartOption> cartOptionDtoList= new ArrayList<>();; //옵션 정보
     private int quantity;
-    private int unitPrice;
+    @Builder.Default
+    private List<CartOption> cartOptionDtoList= new ArrayList<>(); //옵션 정보
+
+
 
     public void setQuantity(int quantity) {
         this.quantity = quantity;
@@ -32,6 +34,21 @@ public class RedisCartItem {
 
         private String optionName;
         @Builder.Default
-        private List<String> optionDetailNameList= new ArrayList<>();;
+        private List<OptionDetail> optionDetailList= new ArrayList<>();
+
+
+        @Getter
+        @Builder
+        @NoArgsConstructor
+        @AllArgsConstructor
+        public static class OptionDetail {
+
+            private String optionDetailName;
+            private int optionDetailPrice;
+            private int optionDetailQuantity;
+
+        }
     }
+
+
 }

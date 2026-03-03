@@ -29,6 +29,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             "/owner/baseLogin",
             "/owner/refresh",
             "/owner/create",
+            "/admin/login",
             "/auth/email/present",
             "/auth/email/send",
             "/auth/email/verify",

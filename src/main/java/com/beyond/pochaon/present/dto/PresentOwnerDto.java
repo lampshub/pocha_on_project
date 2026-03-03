@@ -16,6 +16,7 @@ import java.util.UUID;
 public class PresentOwnerDto {
     private Long orderingId;
     private int senderTableNum;
+    @Builder.Default
     private String type = "PRESENT";
     private UUID groupId;
     private int receiverTableNum;
@@ -27,6 +28,7 @@ public class PresentOwnerDto {
     @Data
     public static class MenuDto {
         private String menuName;
+        private int menuPrice;
         private int menuQuantity;
     }
 }

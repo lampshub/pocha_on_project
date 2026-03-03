@@ -2,8 +2,10 @@ package com.beyond.pochaon.owner.repository;
 
 import com.beyond.pochaon.owner.domain.Owner;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -13,4 +15,7 @@ public interface OwnerRepository extends JpaRepository<Owner, Long> {
     boolean existsByBusinessRegistrationNumber(String businessRegistrationNumber);
 
     Optional<Owner> findByOwnerNameAndPhoneNumber(String name, String phone);
+
+    @Query("SELECT o FROM Owner o LEFT JOIN FETCH o.storeList")
+    List<Owner> findAllWithStores();
 }

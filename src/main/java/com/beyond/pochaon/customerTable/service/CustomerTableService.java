@@ -2,11 +2,11 @@ package com.beyond.pochaon.customerTable.service;
 
 import com.beyond.pochaon.chat.service.ChatService;
 import com.beyond.pochaon.common.auth.JwtTokenProvider;
-import com.beyond.pochaon.common.service.SseAlramService;
+import com.beyond.pochaon.common.service.SseAlarmService;
 import com.beyond.pochaon.common.web.WebPublisher;
 import com.beyond.pochaon.customerTable.domain.CustomerTable;
 import com.beyond.pochaon.customerTable.domain.TableStatus;
-import com.beyond.pochaon.customerTable.dtos.*;
+import com.beyond.pochaon.customerTable.dto.*;
 import com.beyond.pochaon.customerTable.repository.CustomerTableRepository;
 import com.beyond.pochaon.ordering.domain.Ordering;
 import com.beyond.pochaon.ordering.repository.OrderingRepository;
@@ -32,18 +32,18 @@ public class CustomerTableService {
     private final SimpMessagingTemplate simpMessagingTemplate;
     private final JwtTokenProvider jwtTokenProvider;
     private final WebPublisher webPublisher;
-    private final SseAlramService sseAlramService;
+    private final SseAlarmService sseAlarmService;
     private final ChatService chatService;
 
     @Autowired
-    public CustomerTableService(CustomerTableRepository customerTableRepository, StoreRepository storeRepository, OrderingRepository orderingRepository, SimpMessagingTemplate simpMessagingTemplate, JwtTokenProvider jwtTokenProvider, WebPublisher webPublisher, SseAlramService sseAlramService, ChatService chatService) {
+    public CustomerTableService(CustomerTableRepository customerTableRepository, StoreRepository storeRepository, OrderingRepository orderingRepository, SimpMessagingTemplate simpMessagingTemplate, JwtTokenProvider jwtTokenProvider, WebPublisher webPublisher, SseAlarmService sseAlarmService, ChatService chatService) {
         this.customerTableRepository = customerTableRepository;
         this.storeRepository = storeRepository;
         this.orderingRepository = orderingRepository;
         this.simpMessagingTemplate = simpMessagingTemplate;
         this.jwtTokenProvider = jwtTokenProvider;
         this.webPublisher = webPublisher;
-        this.sseAlramService = sseAlramService;
+        this.sseAlarmService = sseAlarmService;
         this.chatService = chatService;
     }
 
@@ -101,6 +101,7 @@ public class CustomerTableService {
     /*
     테이블 선택 후 토큰 발급
      */
+    @Transactional
     public TableTokenDto selectTable(String email, String stage, Long storeId, TableSelectDto dto) {
         if (!"STORE".equals(stage)) {
             throw new AccessDeniedException("STORE 토큰이 필요합니다.");
@@ -115,7 +116,7 @@ public class CustomerTableService {
         }
 
         table.setTableStatusUsing();
-        sseAlramService.sendTableStatus(storeId, dto.getTableNum(), "USING");
+        sseAlarmService.sendTableStatus(storeId, dto.getTableNum(), "USING");
 
         // ── 테이블 상태 변경 브로드캐스트 추가 ──────────────────────
         TableStatusEventDto eventDto = TableStatusEventDto.builder()
@@ -195,6 +196,7 @@ public class CustomerTableService {
                 .toList();
     }
 
+    @Transactional
     public void tableRollBack(Long customerTableId) {
         // store까지 fetch join으로 조회 (storeId 필요)
         CustomerTable table = customerTableRepository
@@ -204,7 +206,7 @@ public class CustomerTableService {
         table.setTableStatusStandBy();
 
         // ── AVAILABLE 이벤트 브로드캐스트 ──────────────────────────
-        sseAlramService.sendTableStatus(
+        sseAlarmService.sendTableStatus(
                table.getStore().getId(),
                 table.getTableNum(),
                 "AVAILABLE"

@@ -20,6 +20,9 @@ public class Category {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String categoryName;
+    @Enumerated(EnumType.STRING)
+    private OrderAlarmTo orderAlarmTo;
+
     @OneToMany(mappedBy = "category", fetch = FetchType.LAZY)
     @Builder.Default
     private List<Menu> menuList= new ArrayList<>();

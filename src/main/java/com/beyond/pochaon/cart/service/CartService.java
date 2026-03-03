@@ -31,7 +31,7 @@ public class CartService {
     private final MenuOptionRepository menuOptionRepository;
     private final MenuOptionDetailRepository menuOptionDetailRepository;
 
-    public CartService(@Qualifier("cartInventory")RedisTemplate<String, RedisCartItem> redisTemplate, MenuRepository menuRepository, MenuOptionRepository menuOptionRepository, MenuOptionDetailRepository menuOptionDetailRepository) {
+    public CartService(@Qualifier("cartInventory") RedisTemplate<String, RedisCartItem> redisTemplate, MenuRepository menuRepository, MenuOptionRepository menuOptionRepository, MenuOptionDetailRepository menuOptionDetailRepository) {
         this.redisTemplate = redisTemplate;
         this.menuRepository = menuRepository;
         this.menuOptionRepository = menuOptionRepository;
@@ -39,12 +39,9 @@ public class CartService {
     }
 
 
-
-
-
     //    menu|option:optionDetail|option:optionDetail,optionDetail
     //    fieldKey받아오기 공통로직
-    private String createFieldKey(Long menuId, List<CartCreateDto.CreateOptionId> optionId) {
+    private String createFieldKey(Long menuId, List<CartCreateDto.CreateDetailDto.CreateOptionDto> optionId) {
 
         StringBuilder sb = new StringBuilder();
         sb.append(menuId);
@@ -54,22 +51,25 @@ public class CartService {
         }
 
 //        옵션 정렬
-        List<CartCreateDto.CreateOptionId> sortedOption = new ArrayList<>(optionId);
-        Collections.sort(sortedOption,new Comparator<CartCreateDto.CreateOptionId>() {
+        List<CartCreateDto.CreateDetailDto.CreateOptionDto> sortedOption = new ArrayList<>(optionId);
+        Collections.sort(sortedOption, new Comparator<CartCreateDto.CreateDetailDto.CreateOptionDto>() {
             @Override
-            public int compare(CartCreateDto.CreateOptionId o1, CartCreateDto.CreateOptionId o2) {
+            public int compare(CartCreateDto.CreateDetailDto.CreateOptionDto o1, CartCreateDto.CreateDetailDto.CreateOptionDto o2) {
                 return o1.getOptionId().compareTo(o2.getOptionId());
             }
         });
 
-        for (CartCreateDto.CreateOptionId group : sortedOption) {
-            List<Long> detailIdList = group.getOptionDetailId();
+        for (CartCreateDto.CreateDetailDto.CreateOptionDto group : sortedOption) {
+            List<CartCreateDto.CreateDetailDto.CreateOptionDto.CreateOptionDetailDto> detailIdList = group.getOptionDetailList();
             if (detailIdList == null || detailIdList.isEmpty()) {
                 continue;
             }
 
 //            optionDetail정렬
-            List<Long> sortedDetail = new ArrayList<>(detailIdList);
+            List<Long> sortedDetail = new ArrayList<>();
+            for (CartCreateDto.CreateDetailDto.CreateOptionDto.CreateOptionDetailDto d : detailIdList) {
+                sortedDetail.add(d.getOptionDetailId());
+            }
             Collections.sort(sortedDetail);
             sb.append("|");
             sb.append(group.getOptionId()).append(":");
@@ -79,7 +79,15 @@ public class CartService {
                 if (!first) {
                     sb.append(",");
                 }
-                sb.append(detailId);
+
+                int quantity = 0;
+                for (CartCreateDto.CreateDetailDto.CreateOptionDto.CreateOptionDetailDto d : detailIdList) {
+                    if (d.getOptionDetailId().equals(detailId)) {
+                        quantity = d.getOptionDetailQuantity();
+                        break;
+                    }
+                }
+                sb.append(detailId).append("_").append(quantity);
                 first = false;
             }
         }
@@ -88,12 +96,13 @@ public class CartService {
 
 
     //    1. 카트 주문넣기
-    public void cartCreate(CartCreateDto cartCreateDto,  Long tableId) {
+    public void cartCreate(CartCreateDto cartCreateDto, Long tableId) {
 
         String redisKey = CART_PREFIX + tableId;
         HashOperations<String, String, RedisCartItem> hashOptions = redisTemplate.opsForHash();
 
-        for (CartCreateDto.CartCreateDetailDto detailDto : cartCreateDto.getCreateDetailDto()) {
+
+        for (CartCreateDto.CreateDetailDto detailDto : cartCreateDto.getCreateDetailList()) {
 
             Menu menu = menuRepository.findById(detailDto.getMenuId()).orElseThrow(() -> new IllegalArgumentException("메뉴가 없습니다"));
             int quantity = detailDto.getMenuQuantity();
@@ -102,64 +111,54 @@ public class CartService {
             if (quantity > 99) quantity = 99;
 
             int menuPrice = menu.getPrice();
+
             Long menuId = detailDto.getMenuId();
 
-//           가격 초기화
-            int optionDetailPriceSum = 0;
 
-//           optionDetailId List // 가격합산용
-            List<Long> DetailIdList =new ArrayList<>();
-//            option,optionDetail //name용
-            List<RedisCartItem.CartOption>cartOptionList =new ArrayList<>();
+            //                    create->rediscart
+            List<RedisCartItem.CartOption> cartOptionList = new ArrayList<>();
 
-            if (detailDto.getOptionId() != null && !detailDto.getOptionId().isEmpty()) {
-                for(CartCreateDto.CreateOptionId group : detailDto.getOptionId()){
-                    if(group.getOptionDetailId()!=null && !group.getOptionDetailId().isEmpty()){
-                        for(Long detailId: group.getOptionDetailId()){
-                            DetailIdList.add(detailId);
-                        }
-                    }
-//                    옵션이름, 디테일 이름
-                    MenuOption menuOption = menuOptionRepository.findById(group.getOptionId()).orElseThrow(()->new IllegalArgumentException("옵션이 없습니다"));
+            if (detailDto.getOptionList() != null && !detailDto.getOptionList().isEmpty()) {
+                for (CartCreateDto.CreateDetailDto.CreateOptionDto optionDto : detailDto.getOptionList()) {
 //                   메뉴에 해당하는  옵션인지 검증
+                    MenuOption menuOption = menuOptionRepository.findById(optionDto.getOptionId()).orElseThrow(() -> new IllegalArgumentException("옵션이 없습니다"));
                     if (!menuOption.getMenu().getId().equals(menuId)) {
                         throw new IllegalArgumentException("해당 메뉴의 옵션이 아닙니다.");
                     }
-                    List<String> detailNameList =new ArrayList<>();
-                    if(group.getOptionDetailId()!=null && !group.getOptionDetailId().isEmpty()){
-                        for(Long detailId : group.getOptionDetailId()){
-                            MenuOptionDetail detail =menuOptionDetailRepository.findById(detailId).orElseThrow(()->new IllegalArgumentException("옵션디테일이 없습니다"));
+                    List<RedisCartItem.CartOption.OptionDetail> optionDetailList = new ArrayList<>();
+                    for (CartCreateDto.CreateDetailDto.CreateOptionDto.CreateOptionDetailDto optionDetailDto : optionDto.getOptionDetailList()) {
+                        MenuOptionDetail detail = menuOptionDetailRepository.findById(optionDetailDto.getOptionDetailId()).orElseThrow(() -> new IllegalArgumentException("옵션디테일이 없습니다"));
 //                            옵션에 해당하는 디테일인지 검증
-                            if (!detail.getMenuOption().getId().equals(menuOption.getId())) {
-                                throw new IllegalArgumentException("해당 옵션의 옵션디테일이 아닙니다.");
-                            }
-                            detailNameList.add(detail.getOptionDetailName());
+                        if (!detail.getMenuOption().getId().equals(menuOption.getId())) {
+                            throw new IllegalArgumentException("해당 옵션의 옵션디테일이 아닙니다.");
                         }
+
+                        optionDetailList.add(
+                                RedisCartItem.CartOption.OptionDetail.builder()
+                                        .optionDetailName(detail.getOptionDetailName())
+                                        .optionDetailPrice(detail.getOptionDetailPrice())
+                                        .optionDetailQuantity(optionDetailDto.getOptionDetailQuantity())
+                                        .build()
+                        );
                     }
-//                    create->rediscart
+
+
                     cartOptionList.add(
                             RedisCartItem.CartOption.builder()
                                     .optionName(menuOption.getOptionName())
-                                    .optionDetailNameList(detailNameList)
+                                    .optionDetailList(optionDetailList)
                                     .build()
                     );
                 }
-
-//                optionDetaiList 가격 합산
-                if(!DetailIdList.isEmpty()){
-                    optionDetailPriceSum =menuOptionDetailRepository.sumPriceByOptionDetailId(DetailIdList);
-                }
             }
 
-            int unitPrice = menuPrice + optionDetailPriceSum;
-
-
+//
 //          fieldKey생성 (menu|option:optionDetail|option:optionDetail,optionDetail) //3분할
 
-            String fieldKey = createFieldKey(menuId,detailDto.getOptionId());
+            String fieldKey = createFieldKey(menuId, detailDto.getOptionList());
 //            fieldKey에 |가 있을 때만 파싱 (option이있을때만)
             String optionKey = null;
-            if(fieldKey.contains("|")) {
+            if (fieldKey.contains("|")) {
                 optionKey = fieldKey.split("\\|", 2)[1];
             }
 //            redis에서 기존 값과 겹치는 것이 있는지 조회 후 없으면 저장, //create->redis
@@ -168,10 +167,10 @@ public class CartService {
                 RedisCartItem saveItem = RedisCartItem.builder()
                         .menuId(menuId)
                         .menuName(menu.getMenuName())
+                        .menuPrice(menuPrice)
                         .optionKey(optionKey)
                         .cartOptionDtoList(cartOptionList)
                         .quantity(quantity)
-                        .unitPrice(unitPrice)
                         .build();
                 hashOptions.put(redisKey, fieldKey, saveItem);
 //                있다면 수량 증가
@@ -182,6 +181,7 @@ public class CartService {
             }
         }
     }
+
 
 
     //    2. 카트 조회
@@ -196,9 +196,7 @@ public class CartService {
 
 
 //        장바구니 상세목록
-        List<CartDto.CartDetailDto> cartDetailDtoList = new ArrayList<>();
-
-
+        List<CartDto.DetailDto> cartDetailList = new ArrayList<>();
         int cartTotalPrice = 0;
 
 //            redis저장된 카트데이터 key(fieldKey):value값 둘다 꺼냄
@@ -207,41 +205,57 @@ public class CartService {
             RedisCartItem item = entry.getValue();
 
 //            CartOptionDto조립 Name꺼내기
-            List<CartDto.CartOptionDto> optionDtoList = new ArrayList<>();
+            List<CartDto.DetailDto.OptionDto> optionDtoList = new ArrayList<>();
+            int optionTotalPrice = 0;
 
             if (item.getCartOptionDtoList() != null) {
                 for (RedisCartItem.CartOption option : item.getCartOptionDtoList()) {
+                    List<CartDto.DetailDto.OptionDto.OptionDetailDto> optionDetailDtoList = new ArrayList<>();
+                    for(RedisCartItem.CartOption.OptionDetail optionDetail : option.getOptionDetailList()){
+                        optionDetailDtoList.add(
+                                CartDto.DetailDto.OptionDto.OptionDetailDto.builder()
+                                        .optionDetailName(optionDetail.getOptionDetailName())
+                                        .optionDetailPrice(optionDetail.getOptionDetailPrice())
+                                        .optionDetailQuantity(optionDetail.getOptionDetailQuantity())
+                                        .build()
+                        );
+                        optionTotalPrice += optionDetail.getOptionDetailPrice()*optionDetail.getOptionDetailQuantity();
+                    }
+
+
                     optionDtoList.add(
-                            CartDto.CartOptionDto.builder()
+                            CartDto.DetailDto.OptionDto.builder()
                                     .optionName(option.getOptionName())
-                                    .optionDetailNameList(option.getOptionDetailNameList())
+                                    .optionDetailList(optionDetailDtoList)
                                     .build()
                     );
                 }
             }
-
-//            라인가격
-            int lineTotalPrice= item.getUnitPrice()*item.getQuantity();
+//          메뉴+총 옵션가격
+            int unitPrice = item.getMenuPrice()+optionTotalPrice;
+//           총 라인가격
+            int lineTotalPrice= unitPrice*item.getQuantity();
 
 
 //                 CartDetailDto 조립
-            CartDto.CartDetailDto detailDto = CartDto.CartDetailDto.builder()
+            CartDto.DetailDto detailDto = CartDto.DetailDto.builder()
                     .menuId(item.getMenuId())
                     .menuName(item.getMenuName())
+                    .menuPrice(item.getMenuPrice())
                     .lineTotalPrice(lineTotalPrice)
                     .fieldKey(fieldKey)
                     .menuQuantity(item.getQuantity())
-                    .cartOptionDtoList(optionDtoList) //옵셔 dto리스트
+                    .optionList(optionDtoList)
                     .build();
 
-            cartDetailDtoList.add(detailDto);
+            cartDetailList.add(detailDto);
 //            총가격
             cartTotalPrice += lineTotalPrice;
         }
 //        CartDto생성
         return CartDto.builder()
-                .cartDetailDto(cartDetailDtoList)
-                .CartTotalPrice(cartTotalPrice)
+                .cartDetailList(cartDetailList)
+                .cartTotalPrice(cartTotalPrice)
                 .build();
 
     }

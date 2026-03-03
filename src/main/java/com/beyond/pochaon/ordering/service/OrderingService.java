@@ -27,22 +27,6 @@ public class OrderingService {
         this.simpMessagingTemplate = simpMessagingTemplate;
     }
 
-    /*
-    // ========== 점주 화면에 실시간 알림 ==========
-        Long storeId = table.getStore().getId();
-        messagingTemplate.convertAndSend(
-                "/topic/order-queue/" + storeId,
-                Map.of(
-                        "type", "NEW_ORDER",
-                        "order", OrderQueueDto.fromEntity(ordering)
-        )
-     );
-     */
-    //    주문취소리스트조회
-    public List<Ordering> cancelledList() {
-        return orderingRepository.findByOrderStatusOrderByIdDesc(OrderStatus.CANCELLED);
-    }
-
     // 점주 화면 로드시 Stanby 만 조회
     @Transactional(readOnly = true)
     public List<OrderQueueDto> getOrderQueue(Long storeId) {
@@ -78,13 +62,6 @@ public class OrderingService {
                         "orderingId", orderingId)); //어떤 주문이 완료됐는지
         return OrderQueueDto.fromEntity(ordering);
     }
-
-//    //        websocket 선물알림 -> 프론트에서 해당 orderingId 카드를 큐에서 제거
-//        simpMessagingTemplate.convertAndSend("/topic/order-queue/" + storeId,
-//            Map.of("type", "ORDER_DONE", //프론트에서 이 타입으로 분기
-//            "orderingId", orderingId)); //어떤 주문이 완료됐는지
-//        return OrderQueueDto.fromEntity(ordering);
-//}
 
     public int getGroupIdTotal(UUID groupId) {
         return orderingRepository.sumTotalPriceByGroupId(groupId);

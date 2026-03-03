@@ -1,5 +1,5 @@
 package com.beyond.pochaon.common.service;
-import com.beyond.pochaon.common.dtos.PasswordResetReqDto;
+import com.beyond.pochaon.common.dto.PasswordResetReqDto;
 import com.beyond.pochaon.owner.domain.Owner;
 import com.beyond.pochaon.owner.repository.OwnerRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;

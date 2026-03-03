@@ -13,7 +13,9 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 @ToString
-
+@Table(name = "customer_table", indexes = {
+        @Index(name = "idx_customer_table_store", columnList = "store_id")
+})
 public class CustomerTable extends BaseTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -52,6 +54,11 @@ public class CustomerTable extends BaseTimeEntity {
 
     public void updateStatus(TableStatus status) {
         this.tableStatus = status;
+    }
+
+    public void assignGroup(UUID groupId) {
+        this.groupId = groupId;
+        this.tableStatus = TableStatus.USING;
     }
 
 }

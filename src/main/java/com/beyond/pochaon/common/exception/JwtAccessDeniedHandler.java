@@ -1,6 +1,6 @@
 package com.beyond.pochaon.common.exception;
 
-import com.beyond.pochaon.common.dtos.CommonErrorDto;
+import com.beyond.pochaon.common.dto.CommonErrorDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

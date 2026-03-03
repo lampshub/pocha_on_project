@@ -78,6 +78,7 @@ public class SecurityConfig {
                                         "/owner/login",
                                         "/owner/create",
                                         "/owner/refresh",
+                                        "/admin/login",
                                         "/customertable/tablestatuslist",
                                         "/ordering/total",
                                         "/api/payment/**",
@@ -90,6 +91,7 @@ public class SecurityConfig {
                                         "/store/menu/**",
                                         "/customertable/**",
                                         "/store/detail/**",
+                                        "/ingredient/**",
                                         "/ws-stomp/**",
                                         "/connect/**"
                                 ).permitAll()

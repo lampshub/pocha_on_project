@@ -1,8 +1,8 @@
 package com.beyond.pochaon.common.controller;
 
 
-import com.beyond.pochaon.common.dtos.EmailRequestDto;
-import com.beyond.pochaon.common.dtos.EmailVerifyRequest;
+import com.beyond.pochaon.common.dto.EmailRequestDto;
+import com.beyond.pochaon.common.dto.EmailVerifyRequest;
 import com.beyond.pochaon.common.service.EmailAuthService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;

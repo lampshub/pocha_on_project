@@ -21,22 +21,11 @@ public class OrderingController {
         this.orderingService = orderingService;
     }
 
-//    @GetMapping("/cancelled")
-
-    /// /    @PreAuthorize("hasRole('ADMIN')")   //점주만 확인할수있음
-//    public List<CancelledOrderResDto> cancelledList() {
-//
-//        return orderingService.cancelledList()
-//                .stream()
-//                .map(CancelledOrderResDto::fromEntity)
-//                .toList();
-//    }
-
     //     화면 로드시 standBy 주문 조회
     @GetMapping("/queue")
     public ResponseEntity<List<OrderQueueDto>> getOrderQueue(@RequestAttribute Long storeId) {
-        List<OrderQueueDto> queueDtos = orderingService.getOrderQueue(storeId);
-        return ResponseEntity.ok(queueDtos);
+        List<OrderQueueDto> queueDto = orderingService.getOrderQueue(storeId);
+        return ResponseEntity.ok(queueDto);
     }
 
     //    점주가 조리완료 버튼 클릭 -> 하단 주문내역에서 사라짐

@@ -2,7 +2,7 @@ package com.beyond.pochaon.common.controller;
 
 import com.beyond.pochaon.common.auth.JwtTokenProvider;
 import com.beyond.pochaon.common.repository.SseEmitterRegistry;
-import com.beyond.pochaon.common.service.SseAlramService;
+import com.beyond.pochaon.common.service.SseAlarmService;
 import io.jsonwebtoken.Claims;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,16 +28,16 @@ public class SseController {
 //}
     private final SseEmitterRegistry sseEmitterRegistry;
     private final JwtTokenProvider jwtTokenProvider;
-    private final SseAlramService sseAlramService;
+    private final SseAlarmService sseAlarmService;
 
     private final ScheduledExecutorService heartbeatScheduler =
             Executors.newScheduledThreadPool(2);
 
     @Autowired
-    public SseController(SseEmitterRegistry sseEmitterRegistry, JwtTokenProvider jwtTokenProvider, SseAlramService sseAlramService) {
+    public SseController(SseEmitterRegistry sseEmitterRegistry, JwtTokenProvider jwtTokenProvider, SseAlarmService sseAlarmService) {
         this.sseEmitterRegistry = sseEmitterRegistry;
         this.jwtTokenProvider = jwtTokenProvider;
-        this.sseAlramService = sseAlramService;
+        this.sseAlarmService = sseAlarmService;
     }
 
     //Sse연결 api 토큰의 stage를 통해 점주/테이블을 구분해서 각각의 Map에 등록
@@ -68,7 +68,7 @@ public class SseController {
         // emitter 종료 시 heartbeat도 정리
         Runnable cleanup = () -> {
             heartbeat.cancel(false);
-            if ("STORE".equals(false)) {
+            if ("STORE".equals(stage)) {
                 sseEmitterRegistry.removeOwnerEmitter(String.valueOf(storeId), sseEmitter);
             } else if ("TABLE".equals(stage)) {
                 int tableNum = jwtTokenProvider.getTableNum(token);
@@ -98,7 +98,7 @@ public class SseController {
         Long storeId = jwtTokenProvider.getStoreId(token);
         Integer tableNum = jwtTokenProvider.getTableNum(token);
         try {
-            sseAlramService.sendToOwner(String.valueOf(storeId), String.valueOf(tableNum), tableNum + "번 테이블에서 직원을 호출했습니다.");
+            sseAlarmService.sendToOwner(String.valueOf(storeId), String.valueOf(tableNum), tableNum + "번 테이블에서 직원을 호출했습니다.");
             return ResponseEntity.ok("호출완료");
         } catch (Exception e) {
             log.warn("직원 호출 전송 실패: {}", e.getMessage());

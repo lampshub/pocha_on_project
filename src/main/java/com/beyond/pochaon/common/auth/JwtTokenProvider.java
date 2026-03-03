@@ -1,5 +1,7 @@
 package com.beyond.pochaon.common.auth;
 
+import com.beyond.pochaon.admin.domain.Admin;
+import com.beyond.pochaon.admin.repository.AdminRepository;
 import com.beyond.pochaon.owner.domain.Owner;
 import com.beyond.pochaon.owner.repository.OwnerRepository;
 import io.jsonwebtoken.Claims;
@@ -43,14 +45,16 @@ public class JwtTokenProvider {
 
     private final RedisTemplate<String, String> redisTemplate;
     private final OwnerRepository ownerRepository;
+    private final AdminRepository adminRepository;
 
     @Autowired
     public JwtTokenProvider(
             @Qualifier("rtInventory")RedisTemplate<String, String> redisTemplate,
-            OwnerRepository ownerRepository
+            OwnerRepository ownerRepository, AdminRepository adminRepository
     ) {
         this.redisTemplate = redisTemplate;
         this.ownerRepository = ownerRepository;
+        this.adminRepository = adminRepository;
     }
 
     @PostConstruct
@@ -155,11 +159,38 @@ public class JwtTokenProvider {
                 .compact();
     }
 
+    // 어드민 로그인 access token
+    public String createAdminAccessToken(
+            Admin admin,
+            TokenStage stage,
+            Map<String, Object> extraClaims
+    ) {
+        Claims claims = Jwts.claims()
+                .setSubject(admin.getAdminEmail());
+
+        claims.put("role", admin.getRole().name());
+        claims.put("stage", stage.name());  //서비스로직에서 BASE로 깔아줌
+        claims.put("adminId", admin.getId());
+
+        if (extraClaims != null) {
+            claims.putAll(extraClaims);
+        }
+
+        Date now = new Date();
+
+        return Jwts.builder()
+                .setClaims(claims)
+                .setIssuedAt(now)
+                .setExpiration(new Date(now.getTime() + expiration * 60 * 1000L))
+                .signWith(secret_key)
+                .compact();
+    }
+
     /* =====================================================
        Refresh Token
        ===================================================== */
 
-    // refresh token 생성
+    // 점주 refresh token 생성
     public String createRefreshToken(Owner owner) {
 
         Claims claims = Jwts.claims()
@@ -183,7 +214,7 @@ public class JwtTokenProvider {
         return refreshToken;
     }
 
-    // refresh token 검증
+    // 점주 refresh token 검증
     public Owner validateRefreshToken(String refreshToken) {
         String cleanedInputRt = refreshToken.replace("Bearer ", "").trim();
 
@@ -242,5 +273,68 @@ public class JwtTokenProvider {
         return claims.get("storeId", Long.class);
     }
 
+
+    // 어드민 refresh token 생성
+    public String createAdminRefreshToken(Admin admin) {
+
+        Claims claims = Jwts.claims()
+                .setSubject(admin.getAdminEmail());
+
+        claims.put("role", admin.getRole().name());
+
+        Date now = new Date();
+
+        String refreshToken = Jwts.builder()
+                .setClaims(claims)
+                .setIssuedAt(now)
+                .setExpiration(new Date(now.getTime() + expirationRt * 60 * 1000L))
+                .signWith(secret_key_rt)
+                .compact();
+
+        // Redis 저장
+        redisTemplate.opsForValue()
+                .set(admin.getAdminEmail(), refreshToken, expirationRt, TimeUnit.MINUTES);
+
+        return refreshToken;
+    }
+
+    // 어드민 refresh token 검증
+    public Admin validateAdminRefreshToken(String refreshToken) {
+        String cleanedInputRt = refreshToken.replace("Bearer ", "").trim();
+
+        Claims claims;
+
+        try {
+            claims = Jwts.parserBuilder()
+                    .setSigningKey(secret_key_rt)
+                    .build()
+                    .parseClaimsJws(refreshToken)
+                    .getBody();
+
+        } catch (Exception e) {
+            throw new IllegalArgumentException("유효하지 않은 RefreshToken");
+        }
+
+        String email = claims.getSubject();
+
+        Admin admin = adminRepository.findByAdminEmail(email)
+                .orElseThrow(() -> new EntityNotFoundException("Admin not found"));
+
+        // Redis 토큰 검증
+        String redisRt = redisTemplate.opsForValue().get(email);
+
+
+        // 디버깅 로그 추가: 공백이나 "Bearer" 문자열이 포함되어 있는지 확인
+        log.info("Cleaned Input RT: [" + cleanedInputRt + "]");
+        log.info("Redis RT: [" + redisRt + "]");
+
+        if (redisRt == null)
+            throw new IllegalArgumentException("이미 사용된 RefreshToken");
+
+        if (!redisRt.equals(cleanedInputRt))
+            throw new IllegalArgumentException("RefreshToken mismatch");
+
+        return admin;
+    }
 }
 
