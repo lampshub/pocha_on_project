@@ -33,7 +33,8 @@ public class StockEventConsumer {
         this.menuRepository = menuRepository;
     }
 
-    @KafkaListener(topics = "stock-decrease-failed", groupId = "order-group")
+    @Transactional
+    @KafkaListener(topics = "stock-decrease-failed", groupId = "order-group", containerFactory = "kafkaListener")
     public void handleStockFailure(String message, Acknowledgment ack) {
         try {
             // 1. 메시지 역직렬화

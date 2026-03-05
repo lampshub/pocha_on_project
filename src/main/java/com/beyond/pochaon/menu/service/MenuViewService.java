@@ -1,12 +1,12 @@
 package com.beyond.pochaon.menu.service;
 
+import com.beyond.pochaon.menu.dto.CategoryViewDto;
+import com.beyond.pochaon.menu.dto.MenuDetailPageDto;
+import com.beyond.pochaon.menu.dto.MenuViewDto;
 import com.beyond.pochaon.menu.domain.Category;
 import com.beyond.pochaon.menu.domain.Menu;
 import com.beyond.pochaon.menu.domain.MenuOption;
 import com.beyond.pochaon.menu.domain.MenuOptionDetail;
-import com.beyond.pochaon.menu.dto.CategoryViewDto;
-import com.beyond.pochaon.menu.dto.MenuDetailPageDto;
-import com.beyond.pochaon.menu.dto.MenuViewDto;
 import com.beyond.pochaon.menu.repository.CategoryRepository;
 import com.beyond.pochaon.menu.repository.MenuRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -166,6 +166,7 @@ import java.util.List;
                             .menuId(menu.getId())
                             .menuName(menu.getMenuName())
                             .menuPrice(menu.getPrice())
+                            .orderAlarmTo(menu.getCategory().getOrderAlarmTo())
                             .imageUrl(menu.getMenuImageUrl())
                             .build());
                 }

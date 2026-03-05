@@ -19,7 +19,7 @@ import java.util.UUID;
 @ToString
 @Table(name = "ordering", indexes = {
         @Index(name = "idx_ordering_table_date", columnList = "table_id, create_time_at"),
-        @Index(name = "idx_ordering_table_payment_date", columnList = "table_id, payment_state, create_time_at")
+        @Index(name = "idx_ordering_table_payment_date", columnList = "table_id, payment_status, create_time_at")
 })
 public class Ordering extends BaseTimeEntity {
 
@@ -38,7 +38,7 @@ public class Ordering extends BaseTimeEntity {
 
     @Enumerated(EnumType.STRING)
     @Builder.Default
-    private PaymentStatus paymentState = PaymentStatus.READY;
+    private PaymentStatus paymentStatus = PaymentStatus.READY;
 
     //    멱등성 추가
     @Column(name = "idempotency_key", columnDefinition = "BINARY(16)", nullable = false, unique = true)
@@ -51,6 +51,7 @@ public class Ordering extends BaseTimeEntity {
 
     //    주문의 선물여부
     @Builder.Default
+    @Column(nullable = false)
     private Boolean isPresent = false;
 
     @OneToMany(mappedBy = "ordering", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
@@ -58,8 +59,8 @@ public class Ordering extends BaseTimeEntity {
     @BatchSize(size = 100)
     private List<OrderingDetail> orderDetail = new ArrayList<>();
 
-    public void updatePaymentState(PaymentStatus paymentState) {
-        this.paymentState = paymentState;
+    public void updatePaymentStatus(PaymentStatus paymentStatus) {
+        this.paymentStatus = paymentStatus;
     }
 
     public void updateOrderStatus(OrderStatus orderStatus) {

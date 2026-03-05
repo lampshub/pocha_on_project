@@ -1,16 +1,13 @@
 package com.beyond.pochaon.admin.service;
 
 import com.beyond.pochaon.admin.dtos.OwnerListDto;
-import com.beyond.pochaon.admin.dtos.RenewalStatusDto;
+import com.beyond.pochaon.admin.dtos.ReqServiceEndAtDto;
 import com.beyond.pochaon.admin.dtos.StoreListDtoOnAdmin;
 import com.beyond.pochaon.admin.dtos.StoreStatusDto;
 import com.beyond.pochaon.owner.domain.Owner;
 import com.beyond.pochaon.owner.repository.OwnerRepository;
-import com.beyond.pochaon.store.domain.RenewalRequestStatus;
 import com.beyond.pochaon.store.domain.Store;
-import com.beyond.pochaon.store.domain.StoreRenewalRequest;
 import com.beyond.pochaon.store.domain.StoreStatus;
-import com.beyond.pochaon.store.repository.RenewalRequestRepository;
 import com.beyond.pochaon.store.repository.StoreRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +16,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.data.domain.PageImpl;
+
+import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,12 +28,10 @@ import java.util.stream.Collectors;
 public class AdminService {
     private final OwnerRepository ownerRepository;
     private final StoreRepository storeRepository;
-    private final RenewalRequestRepository renewalRequestRepository;
     @Autowired
-    public AdminService(OwnerRepository ownerRepository, StoreRepository storeRepository, RenewalRequestRepository renewalRequestRepository) {
+    public AdminService(OwnerRepository ownerRepository, StoreRepository storeRepository) {
         this.ownerRepository = ownerRepository;
         this.storeRepository = storeRepository;
-        this.renewalRequestRepository = renewalRequestRepository;
     }
 
     @Transactional(readOnly = true)
@@ -42,13 +41,12 @@ public class AdminService {
     }
 
     @Transactional(readOnly = true)
-    public Page<StoreListDtoOnAdmin> findAllStore(Pageable pageable) {
-        Page<Store> storePage = storeRepository.findAllWithOwners(pageable);
-        return storePage.map(store -> {
-            StoreRenewalRequest renewalRequest = renewalRequestRepository.findTopByStoreOrderByCreateTimeAtDesc(store).orElse(null);
-            return StoreListDtoOnAdmin.fromEntity(store, renewalRequest);
-        });
+    public Page<StoreListDtoOnAdmin> findAllStore(Pageable pageable, StoreStatus status) {
+
+        return storeRepository.findAllSortedByStatus(status, pageable)
+                .map(store -> StoreListDtoOnAdmin.fromEntity(store));
     }
+
 //    점주 매장신청 승인/거절
     public void updateStoreStatus(Long storeId, StoreStatusDto dto){
         Store store = storeRepository.findById(storeId).orElseThrow(()-> new EntityNotFoundException("Store not found"));
@@ -62,15 +60,13 @@ public class AdminService {
         }
     }
 
-//    점주 매장연장신청 승인/거절
-    public void updateRenewalStatus(Long renewalId, RenewalStatusDto dto){
-        StoreRenewalRequest requestStatus = renewalRequestRepository.findById(renewalId).orElseThrow(()-> new EntityNotFoundException("RequestStatus not found"));
-        Store store = storeRepository.findById(requestStatus.getStore().getId()).orElseThrow(()->new EntityNotFoundException("store not found"));
-        if(dto.getStatus() == RenewalRequestStatus.APPROVED){
-            requestStatus.approve();
+    public void updateServiceEndAt(Long storeId, ReqServiceEndAtDto dto){
+        Store store = storeRepository.findById(storeId).orElseThrow(()-> new EntityNotFoundException("Store not found"));
+        if(!store.getServiceStartAt().isBefore(dto.getEndAt()) ){
+            throw new IllegalArgumentException("서비스종료일을 오늘보다 이전으로 설정할수 없습니다");
+        } else if (!LocalDate.now().isBefore(dto.getEndAt())) {
+            throw new IllegalArgumentException("서비스종료일을 서비스시작일보다 이전으로 설정할수 없습니다");
         }
-        if(dto.getStatus() == RenewalRequestStatus.REJECTED){
-            requestStatus.reject(dto.getRejectedReason());
-        }
+        store.updateServiceEndAt(dto.getEndAt());
     }
 }

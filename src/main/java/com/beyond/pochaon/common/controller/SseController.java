@@ -1,12 +1,15 @@
 package com.beyond.pochaon.common.controller;
 
 import com.beyond.pochaon.common.auth.JwtTokenProvider;
+import com.beyond.pochaon.common.dto.SseMessageDto;
 import com.beyond.pochaon.common.repository.SseEmitterRegistry;
 import com.beyond.pochaon.common.service.SseAlarmService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Claims;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -28,16 +31,18 @@ public class SseController {
 //}
     private final SseEmitterRegistry sseEmitterRegistry;
     private final JwtTokenProvider jwtTokenProvider;
-    private final SseAlarmService sseAlarmService;
+    private final ObjectMapper objectMapper;
 
     private final ScheduledExecutorService heartbeatScheduler =
             Executors.newScheduledThreadPool(2);
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     @Autowired
-    public SseController(SseEmitterRegistry sseEmitterRegistry, JwtTokenProvider jwtTokenProvider, SseAlarmService sseAlarmService) {
+    public SseController(SseEmitterRegistry sseEmitterRegistry, JwtTokenProvider jwtTokenProvider, ObjectMapper objectMapper, KafkaTemplate<String, Object> kafkaTemplate) {
         this.sseEmitterRegistry = sseEmitterRegistry;
         this.jwtTokenProvider = jwtTokenProvider;
-        this.sseAlarmService = sseAlarmService;
+        this.objectMapper = objectMapper;
+        this.kafkaTemplate = kafkaTemplate;
     }
 
     //Sse연결 api 토큰의 stage를 통해 점주/테이블을 구분해서 각각의 Map에 등록
@@ -75,10 +80,10 @@ public class SseController {
                 sseEmitterRegistry.removeEmitter(String.valueOf(storeId), String.valueOf(tableNum));
             }
         };
-            sseEmitter.onCompletion(cleanup);
-            sseEmitter.onTimeout(cleanup);
-            sseEmitter.onError(e -> cleanup.run());
-            return sseEmitter;
+        sseEmitter.onCompletion(cleanup);
+        sseEmitter.onTimeout(cleanup);
+        sseEmitter.onError(e -> cleanup.run());
+        return sseEmitter;
     }
 
     @GetMapping("/disstaffcall")
@@ -91,18 +96,24 @@ public class SseController {
     }
 
 
-    //    테이블에서 직원호출 api
+    //    테이블에서 직원호출 api producer
     @PostMapping("/staffcall")
     public ResponseEntity<?> callStaff(@RequestHeader("Authorization") String bearer) {
-        String token = bearer.substring(7); //bearer 는 storeToken ?
+        String token = bearer.substring(7); //bearer 는 tableToken입니다
         Long storeId = jwtTokenProvider.getStoreId(token);
         Integer tableNum = jwtTokenProvider.getTableNum(token);
+        SseMessageDto dto = SseMessageDto.builder()
+                .storeId(String.valueOf(storeId))
+                .tableNum(String.valueOf(tableNum))
+                .message(tableNum + "번 테이블에서 직원을 호출했습니다.")
+                .build();
         try {
-            sseAlarmService.sendToOwner(String.valueOf(storeId), String.valueOf(tableNum), tableNum + "번 테이블에서 직원을 호출했습니다.");
+            String data = objectMapper.writeValueAsString(dto);
+            kafkaTemplate.send("staff-call-topic", String.valueOf(storeId), data);
             return ResponseEntity.ok("호출완료");
         } catch (Exception e) {
-            log.warn("직원 호출 전송 실패: {}", e.getMessage());
-            return ResponseEntity.ok("호출 처리됨(재시도 예정)");
+            log.warn("Kafka 발행 실패: {}", e.getMessage());
+            return ResponseEntity.internalServerError().body("호출 실패");
         }
     }
 }

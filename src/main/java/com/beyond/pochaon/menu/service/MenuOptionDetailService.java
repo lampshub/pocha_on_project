@@ -1,17 +1,20 @@
 package com.beyond.pochaon.menu.service;
 
+import com.beyond.pochaon.menu.domain.Category;
 import com.beyond.pochaon.common.auth.OwnerAuthHelper;
 import com.beyond.pochaon.common.auth.OwnerAuthHelper.OwnerContext;
 import com.beyond.pochaon.menu.domain.MenuOption;
 import com.beyond.pochaon.menu.domain.MenuOptionDetail;
+import com.beyond.pochaon.menu.repository.CategoryRepository;
 import com.beyond.pochaon.menu.dto.MenuOptionDetailReqDto;
 import com.beyond.pochaon.menu.repository.MenuOptionDetailRepository;
 import com.beyond.pochaon.menu.repository.MenuOptionRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import org.springframework.security.access.AccessDeniedException;
 
 @Service
 @Transactional

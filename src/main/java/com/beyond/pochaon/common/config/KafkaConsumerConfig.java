@@ -1,6 +1,4 @@
-package com.beyond.pochaon.ingredient.kafka.config;
-
-
+package com.beyond.pochaon.common.config;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -17,11 +15,12 @@ import java.util.Map;
 
 @Configuration
 public class KafkaConsumerConfig {
+
     @Value("${spring.kafka.bootstrap-servers}")
     private String kafkaServer;
 
     @Bean
-    public ConsumerFactory<String, Object> consumerFactory(){
+    public ConsumerFactory<String, Object> consumerFactory() {
         Map<String, Object> config = new HashMap<>();
         config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaServer);
         config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
@@ -30,11 +29,23 @@ public class KafkaConsumerConfig {
     }
 
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, String> kafkaListener(){
-        ConcurrentKafkaListenerContainerFactory<String, String> listener
-                = new ConcurrentKafkaListenerContainerFactory<>();
+    public ConcurrentKafkaListenerContainerFactory<String, String> OwnerListener() {
+        ConcurrentKafkaListenerContainerFactory<String, String> listener = new ConcurrentKafkaListenerContainerFactory<>();
         listener.setConsumerFactory(consumerFactory());
-////        수동커밋을 위한 설정.
+        return listener;
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, String> KitchenListener() {
+        ConcurrentKafkaListenerContainerFactory<String, String> listener = new ConcurrentKafkaListenerContainerFactory<>();
+        listener.setConsumerFactory(consumerFactory());
+        return listener;
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, String> kafkaListener() {
+        ConcurrentKafkaListenerContainerFactory<String, String> listener = new ConcurrentKafkaListenerContainerFactory<>();
+        listener.setConsumerFactory(consumerFactory());
         listener.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL);
         return listener;
     }

@@ -1,6 +1,7 @@
 package com.beyond.pochaon.common.auth;
 
 
+import io.jsonwebtoken.Claims;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.stomp.StompCommand;

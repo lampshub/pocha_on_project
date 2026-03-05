@@ -23,28 +23,28 @@ public class WebSubscriber {
         this.objectMapper = objectMapper;
     }
 
-    public void onMessage(OwnerEventDto eventDto) {
-// ->redis ->websocket
-        log.info("[REDIS-SUB] Redis 채널 이벤트 수신 type={}, storeId={}", eventDto.getEventType(), eventDto.getStoreId());
-
-        if("ORDER".equals(eventDto.getEventType())) {
-
-            OrderCreateDto createDto = objectMapper.convertValue(eventDto.getPayload(), OrderCreateDto.class);
-            messagingTemplate.convertAndSend("/topic/order/" + eventDto.getStoreId(), createDto);
-            log.info("[~er/{}", eventDto.getStoreId());
-
-        }else if("PRESENT".equals(eventDto.getEventType())){
-
-            PresentOwnerDto presentOwnerDto = objectMapper.convertValue(eventDto.getPayload(),PresentOwnerDto.class);
-            messagingTemplate.convertAndSend("/topic/order/"+ eventDto.getStoreId(), presentOwnerDto);
-            log.info("[WS-PUBLISH] 점주선물주분발행 /topic/order/{}", eventDto.getStoreId());
-
-        }else if("PRESENT_QUEUE".equals(eventDto.getEventType())){
-            PresentQueueDto queueDto = objectMapper.convertValue(eventDto.getPayload(),PresentQueueDto.class);
-            messagingTemplate.convertAndSend("topic/order-queue/" +eventDto.getStoreId(),queueDto);
-            log.info("[WS-PUBLISH] 선물 큐 발행 /topic/order-queue/{}", eventDto.getStoreId());
-        }
-    }
+//    public void onMessage(OwnerEventDto eventDto) {
+//// ->redis ->websocket
+//        log.info("[REDIS-SUB] Redis 채널 이벤트 수신 type={}, storeId={}", eventDto.getEventType(), eventDto.getStoreId());
+//
+//        if("ORDER".equals(eventDto.getEventType())) {
+//
+//            OrderCreateDto createDto = objectMapper.convertValue(eventDto.getPayload(), OrderCreateDto.class);
+//            messagingTemplate.convertAndSend("/topic/order/" + eventDto.getStoreId(), createDto);
+//            log.info("[~er/{}", eventDto.getStoreId());
+//
+//        }else if("PRESENT".equals(eventDto.getEventType())){
+//
+//            PresentOwnerDto presentOwnerDto = objectMapper.convertValue(eventDto.getPayload(),PresentOwnerDto.class);
+//            messagingTemplate.convertAndSend("/topic/order/"+ eventDto.getStoreId(), presentOwnerDto);
+//            log.info("[WS-PUBLISH] 점주선물주분발행 /topic/order/{}", eventDto.getStoreId());
+//
+//        }else if("PRESENT_QUEUE".equals(eventDto.getEventType())){
+//            PresentQueueDto queueDto = objectMapper.convertValue(eventDto.getPayload(),PresentQueueDto.class);
+//            messagingTemplate.convertAndSend("topic/order-queue/" +eventDto.getStoreId(),queueDto);
+//            log.info("[WS-PUBLISH] 선물 큐 발행 /topic/order-queue/{}", eventDto.getStoreId());
+//        }
+//    }
 
     public void onTableMessage(PresentReceiverDto receiverDto){
         messagingTemplate.convertAndSend("/topic/table/"+receiverDto.getReceiverTableNum(), receiverDto);

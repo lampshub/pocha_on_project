@@ -1,22 +1,24 @@
 package com.beyond.pochaon.payment.service;
 
+import com.beyond.pochaon.customerTable.domain.CustomerTable;
+import com.beyond.pochaon.customerTable.repository.CustomerTableRepository;
 import com.beyond.pochaon.ordering.domain.Ordering;
 import com.beyond.pochaon.ordering.repository.OrderingRepository;
-import com.beyond.pochaon.payment.dto.PaymentDto.ConfirmRequest;
-import com.beyond.pochaon.payment.dto.PaymentDto.ConfirmResponse;
-import com.beyond.pochaon.payment.dto.PaymentDto.OrderCreateRequest;
-import com.beyond.pochaon.payment.dto.PaymentDto.OrderCreateResponse;
+import com.beyond.pochaon.payment.dto.PosConfirmReqDto;
 import com.beyond.pochaon.payment.entity.PayerType;
 import com.beyond.pochaon.payment.entity.Payment;
 import com.beyond.pochaon.payment.entity.PaymentStatus;
+import com.beyond.pochaon.payment.dto.PaymentDto.*;
 import com.beyond.pochaon.payment.repository.PaymentRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.*;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpClientErrorException;
@@ -27,6 +29,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -39,7 +42,8 @@ public class PaymentService {
     private final ObjectMapper objectMapper;
     private final RedisTemplate<String, String> redisTemplate;
     private final OrderingRepository orderingRepository;
-
+    private final SimpMessagingTemplate simpMessagingTemplate;
+    private final CustomerTableRepository customerTableRepository;
     // application.yml에서 주입
     @Value("${toss.payments.secret-key}")
     private String secretKey;
@@ -47,12 +51,14 @@ public class PaymentService {
     private static final String TOSS_CONFIRM_URL = "https://api.tosspayments.com/v1/payments/confirm";
     private static final String TOSS_CANCEL_URL = "https://api.tosspayments.com/v1/payments/{paymentKey}/cancel";
 
-    public PaymentService(PaymentRepository paymentRepository, RestTemplate restTemplate, ObjectMapper objectMapper, @Qualifier("groupRedisTemplate") RedisTemplate<String, String> redisTemplate, OrderingRepository orderingRepository) {
+    public PaymentService(PaymentRepository paymentRepository, RestTemplate restTemplate, ObjectMapper objectMapper, @Qualifier("groupRedisTemplate") RedisTemplate<String, String> redisTemplate, OrderingRepository orderingRepository, SimpMessagingTemplate simpMessagingTemplate, CustomerTableRepository customerTableRepository) {
         this.paymentRepository = paymentRepository;
         this.restTemplate = restTemplate;
         this.redisTemplate = redisTemplate;
         this.objectMapper = objectMapper;
         this.orderingRepository = orderingRepository;
+        this.simpMessagingTemplate = simpMessagingTemplate;
+        this.customerTableRepository = customerTableRepository;
     }
 
     // ─── 1. 주문 생성 (결제 전 orderId 발급) ──────────────────
@@ -127,7 +133,7 @@ public class PaymentService {
 
             String paymentKey = responseBody.get("paymentKey").asText();
             String method = responseBody.has("method") ? responseBody.get("method").asText() : null;
-            String approvedAtStr = responseBody.has("processedAt") ? responseBody.get("processedAt").asText() : null;
+            String approvedAtStr = responseBody.has("approvedAt") ? responseBody.get("approvedAt").asText() : null;
 
             LocalDateTime approvedAt = null;
             if (approvedAtStr != null) {
@@ -137,17 +143,30 @@ public class PaymentService {
             // DB 업데이트
             payment.approve(paymentKey, method, approvedAt);
             paymentRepository.save(payment);
-            List<Ordering> orderings = orderingRepository.findByGroupId(UUID.fromString(payment.getGroupId()));
-            for (Ordering ordering : orderings) {
-                ordering.updatePaymentState(PaymentStatus.DONE);
+
+            try {
+                List<Ordering> orderings = orderingRepository.findByGroupId(UUID.fromString(payment.getGroupId()));
+                for (Ordering ordering : orderings) {
+                    ordering.updatePaymentStatus(PaymentStatus.DONE);
+                }
+
+                log.info("[Payment] 결제 승인 완료 - orderId: {}, paymentKey: {}, method: {}",
+                        payment.getOrderId(), paymentKey, method);
+
+                String groupKey = String.valueOf(payment.getTableNum());
+                redisTemplate.delete(groupKey);
+
+                CustomerTable customerTable = customerTableRepository.findByTableNumAndStoreId(payment.getTableNum(), payment.getStoreId()).orElseThrow(() -> new EntityNotFoundException("없는 table || 없는 store/ pay_ser_confirms"));
+                customerTable.clear();
+                customerTableRepository.save(customerTable);
+                simpMessagingTemplate.convertAndSend(
+                        "/topic/order-queue/" + payment.getStoreId(),
+                        Map.of("type", "PAYMENT_DONE",
+                                "tableNum", customerTable.getTableNum())
+                );
+            } catch (Exception e) {
+                log.error("[Payment] 후처리(점주 테이블 비우기 실패) 결제는 완료 : orderId: {}, error: {} ", payment.getOrderId(), e.getMessage());
             }
-
-            log.info("[Payment] 결제 승인 완료 - orderId: {}, paymentKey: {}, method: {}",
-                    payment.getOrderId(), paymentKey, method);
-
-            String groupKey = String.valueOf(payment.getTableNum());
-            redisTemplate.delete(groupKey);
-
             return ConfirmResponse.builder()
                     .paymentKey(paymentKey)
                     .orderId(payment.getOrderId())
@@ -226,5 +245,67 @@ public class PaymentService {
         headers.set("Authorization", "Basic " + encodedKey);
 
         return headers;
+    }
+
+    //    사장이 pos에서 직접 카드 결제
+    public ConfirmResponse confirmPosPayment(PosConfirmReqDto dto) {
+        //        customerId를 조회 -> groupId 가져오기
+        CustomerTable customerTable = customerTableRepository.findByTableNumAndStoreId(dto.getTableNum(), dto.getStoreId()).orElseThrow(() -> new EntityNotFoundException("없는 테이블 번호/storeId payment_ser_confirmPosPayment"));
+        if (customerTable.getGroupId() == null) {
+            throw new IllegalStateException("그룹 Id가 없습니다");
+        }
+        String groupId = String.valueOf(customerTable.getGroupId());
+
+        //        Payment레코드 생성
+        String orderId = "POS_" + UUID.randomUUID().toString().replace("-", "").substring(0, 20);
+
+        Payment payment = Payment.builder()
+                .orderId(orderId)
+                .orderName(dto.getOrderName())
+                .amount(dto.getAmount())
+                .status(PaymentStatus.DONE)
+                .payerType(PayerType.POS)
+                .tableNum(dto.getTableNum())
+                .storeId(dto.getStoreId())
+                .groupId(groupId)
+                .paymentKey("POS_" + orderId) //가라 paymentkey
+                .method("카드")
+                .approveAt(LocalDateTime.now())
+                .build();
+
+        paymentRepository.save(payment);
+        try {
+            List<Ordering> orderings = orderingRepository.findByGroupId(UUID.fromString(payment.getGroupId()));
+            for (Ordering ordering : orderings) {
+                ordering.updatePaymentStatus(PaymentStatus.DONE);
+            }
+
+            String fakeKey = "POS_" + orderId;
+            log.info("[POS Payment] 결제 완료 - orderId: {}, tableNum: {}, amount: {}",
+                    orderId, dto.getTableNum(), dto.getAmount());
+
+            String groupKey = String.valueOf(payment.getTableNum());
+            redisTemplate.delete(groupKey);
+            customerTable.clear();
+            customerTableRepository.save(customerTable);
+            simpMessagingTemplate.convertAndSend(
+                    "/topic/order-queue/" + payment.getStoreId(),
+                    Map.of("type", "PAYMENT_DONE",
+                            "tableNum", customerTable.getTableNum())
+            );
+        } catch (Exception e) {
+            log.error("[Payment] 후처리(점주 테이블 비우기 실패) 결제는 완료 : orderId: {}, error: {} ", payment.getOrderId(), e.getMessage());
+        }
+
+        return ConfirmResponse.builder()
+                .paymentKey(payment.getPaymentKey())
+                .orderId(orderId)
+                .orderName(payment.getOrderName())
+                .totalAmount(dto.getAmount())
+                .method("카드")
+                .status(PaymentStatus.DONE)
+                .approvedAt(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME
+                ))
+                .build();
     }
 }

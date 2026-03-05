@@ -2,10 +2,7 @@ package com.beyond.pochaon.ingredient.domain;
 
 import com.beyond.pochaon.menu.domain.Menu;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Getter
 @Builder

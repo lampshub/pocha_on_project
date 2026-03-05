@@ -1,6 +1,7 @@
 package com.beyond.pochaon.menu.dto;
 
 
+import com.beyond.pochaon.menu.domain.OrderAlarmTo;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -27,6 +28,7 @@ public class CategoryViewDto {
         private Long menuId;
         private String menuName;
         private int menuPrice;
+        private OrderAlarmTo orderAlarmTo;
         private String imageUrl;
 
 

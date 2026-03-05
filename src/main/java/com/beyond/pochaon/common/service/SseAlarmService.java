@@ -30,36 +30,6 @@ public class SseAlarmService implements MessageListener {
         this.objectMapper = objectMapper;
         this.redisTemplate = redisTemplate;
     }
-
-    //    점주 -> 특정 테이블에 메시지 전송. emitter가 있으면 직접 전송 없으면 pub/sub
-    public void sendMessage(String storeId, String tableNum, String message) {
-        SseEmitter sseEmitter = sseEmitterRegistry.getEmitter(storeId, tableNum);
-        SseMessageDto dto = SseMessageDto.builder()
-                .storeId(storeId)
-                .tableNum(tableNum)
-                .message(message)
-                .build();
-
-        try {
-            String data = objectMapper.writeValueAsString(dto);
-            if (sseEmitter != null) {
-                try {
-
-                    sseEmitter.send(SseEmitter.event().name("staffcall").data(data));
-                } catch (IOException e) {
-                    log.warn("전송실패");
-                    sseEmitterRegistry.removeEmitter(storeId, tableNum);
-                    redisTemplate.convertAndSend("staffcall-channel", data);
-                }
-            } else {
-                redisTemplate.convertAndSend("staffcall-channel", data);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-    }
-
     //    redis pub/sub 구독 콜백. 다른 서버에서 convertAndSend로 보낸 메시지를 수신해서 점주 emitter로 전달
     @Override
     public void onMessage(Message message, @Nullable byte[] pattern) {

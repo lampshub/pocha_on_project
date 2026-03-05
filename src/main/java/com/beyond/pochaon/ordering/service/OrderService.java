@@ -1,21 +1,25 @@
 package com.beyond.pochaon.ordering.service;
 
 
-import com.beyond.pochaon.cart.domain.RedisCartItem;
 import com.beyond.pochaon.cart.service.CartService;
+import com.beyond.pochaon.cart.domain.RedisCartItem;
+import com.beyond.pochaon.common.kafka.KafkaService;
 import com.beyond.pochaon.common.web.WebPublisher;
 import com.beyond.pochaon.customerTable.domain.CustomerTable;
 import com.beyond.pochaon.customerTable.repository.CustomerTableRepository;
 import com.beyond.pochaon.ingredient.kafka.event.OrderEvent;
+import com.beyond.pochaon.ingredient.service.IngredientService;
 import com.beyond.pochaon.menu.domain.Menu;
 import com.beyond.pochaon.menu.repository.MenuOptionDetailRepository;
 import com.beyond.pochaon.menu.repository.MenuOptionRepository;
 import com.beyond.pochaon.menu.repository.MenuRepository;
+
 import com.beyond.pochaon.ordering.domain.*;
 import com.beyond.pochaon.ordering.dto.OrderCreateDto;
 import com.beyond.pochaon.ordering.dto.OrderListDto;
 import com.beyond.pochaon.ordering.dto.OrderQueueDto;
 import com.beyond.pochaon.ordering.repository.OrderingRepository;
+import com.beyond.pochaon.present.dto.EventQueDto;
 import com.beyond.pochaon.present.dto.OwnerEventDto;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -49,14 +53,16 @@ public class OrderService {
     private final CustomerTableRepository customerTableRepository;
     @Qualifier("groupRedisTemplate")
     private final RedisTemplate<String, String> groupRedisTemplate;
+    private final KafkaService kafkaService;
     private final WebPublisher webPublisher;
     private final MenuOptionDetailRepository menuOptionDetailRepository;
-    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
     private final ObjectMapper objectMapper;
+    private final IngredientService ingredientService;
 
 
     @Autowired
-    public OrderService(CartService cartService, MenuRepository menuRepository, MenuOptionRepository menuOptionRepository, OrderingRepository orderingRepository, @Qualifier("idempotencyRedisTemplate") RedisTemplate<String, String> idempotencyRedisTemplate, SimpMessagingTemplate messagingTemplate, CustomerTableRepository customerTableRepository, @Qualifier("groupRedisTemplate") RedisTemplate<String, String> groupRedisTemplate, WebPublisher webPublisher, MenuOptionDetailRepository menuOptionDetailRepository, KafkaTemplate<String, String> kafkaTemplate, ObjectMapper objectMapper) {
+    public OrderService(CartService cartService, MenuRepository menuRepository, MenuOptionRepository menuOptionRepository, OrderingRepository orderingRepository, @Qualifier("idempotencyRedisTemplate") RedisTemplate<String, String> idempotencyRedisTemplate, SimpMessagingTemplate messagingTemplate, CustomerTableRepository customerTableRepository, @Qualifier("groupRedisTemplate") RedisTemplate<String, String> groupRedisTemplate, KafkaService kafkaService, WebPublisher webPublisher, MenuOptionDetailRepository menuOptionDetailRepository, KafkaTemplate<String, Object> kafkaTemplate, ObjectMapper objectMapper, IngredientService ingredientService) {
         this.cartService = cartService;
         this.menuRepository = menuRepository;
         this.menuOptionRepository = menuOptionRepository;
@@ -65,11 +71,12 @@ public class OrderService {
         this.messagingTemplate = messagingTemplate;
         this.customerTableRepository = customerTableRepository;
         this.groupRedisTemplate = groupRedisTemplate;
+        this.kafkaService = kafkaService;
         this.webPublisher = webPublisher;
         this.menuOptionDetailRepository = menuOptionDetailRepository;
-
         this.kafkaTemplate = kafkaTemplate;
         this.objectMapper = objectMapper;
+        this.ingredientService = ingredientService;
     }
 
     //  멱등성 로직
@@ -182,6 +189,15 @@ public class OrderService {
         }
 //        주문 총액 스냅샷
         ordering.setTotalPrice(totalPrice);
+
+        for (RedisCartItem cartItem : cartItemList) {
+            String shortage = ingredientService.checkStockAvailability(
+                    cartItem.getMenuId(), cartItem.getQuantity());
+            if (shortage != null) {
+                throw new IllegalStateException("재고 부족: " + shortage);
+            }
+        }
+
 //        db저장
         orderingRepository.save(ordering);
 
@@ -197,20 +213,29 @@ public class OrderService {
                 .payload(orderCreateDto)
                 .build();
 
-        webPublisher.publish(eventDto);
+//        webPublisher.publish(eventDto);
+        kafkaService.orderCreate(eventDto,storeId);
 
+//       orderQue kafka
+        EventQueDto eventQueDto = EventQueDto.builder()
+                .eventType("ORDER")
+                .storeId(customerTable.getStore().getId())
+                .payload(OrderQueueDto.fromEntity(ordering))
+                .build();
 
-//          실시간 주문 알림(테이블 단위)
-//            // ========== 점주 화면에 실시간 알림 ==========
-        messagingTemplate.
+        kafkaService.orderQueueCreate(eventQueDto, eventQueDto.getStoreId());
 
-                convertAndSend(
-                        "/topic/order-queue/" + storeId,
-                        Map.of(
-                                "type", "NEW_ORDER",
-                                "order", OrderQueueDto.fromEntity(ordering)
-                        )
-                );
+////          실시간 주문 알림(테이블 단위)
+////            // ========== 점주 화면에 실시간 알림 ==========
+//        messagingTemplate.
+//
+//                convertAndSend(
+//                        "/topic/order-queue/" + storeId,
+//                        Map.of(
+//                                "type", "NEW_ORDER",
+//                                "order", OrderQueueDto.fromEntity(ordering)
+//                        )
+//                );
 
 
 //        카트 비우기
@@ -450,7 +475,7 @@ public class OrderService {
                 .build();
     }
 
-//    Kafka로 재고 차감 요청을 보냄
+    //    Kafka로 재고 차감 요청을 보냄
     private void publishStockDecreaseEvent(Ordering ordering) {
         try {
             for (OrderingDetail detail : ordering.getOrderDetail()) {

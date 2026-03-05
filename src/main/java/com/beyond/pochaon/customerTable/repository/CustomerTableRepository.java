@@ -54,4 +54,5 @@ public interface CustomerTableRepository extends JpaRepository<CustomerTable, Lo
             @Param("tableNum") int tableNum,
             @Param("storeId") Long storeId
     );
+
 }

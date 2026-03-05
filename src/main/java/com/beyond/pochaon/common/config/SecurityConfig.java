@@ -76,6 +76,8 @@ public class SecurityConfig {
                                         "/app/**",
                                         "/owner/business/verify",
                                         "/owner/login",
+                                        "/store/**",
+                                        "/store/list",
                                         "/owner/create",
                                         "/owner/refresh",
                                         "/admin/login",

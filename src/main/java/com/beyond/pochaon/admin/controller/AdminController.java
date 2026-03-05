@@ -4,6 +4,7 @@ import com.beyond.pochaon.admin.dtos.*;
 import com.beyond.pochaon.admin.service.AdminLoginService;
 import com.beyond.pochaon.admin.service.AdminService;
 import com.beyond.pochaon.owner.dto.TokenDto;
+import com.beyond.pochaon.store.domain.StoreStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -46,20 +47,31 @@ public class AdminController {
     }
 
     @GetMapping("/storelist")
-    public ResponseEntity<Page<StoreListDtoOnAdmin>> findAllStore(@PageableDefault(size = 10) Pageable pageable){
-        Page<StoreListDtoOnAdmin> dtoPage = adminService.findAllStore(pageable);
+    public ResponseEntity<Page<StoreListDtoOnAdmin>> findAllStore(
+            @PageableDefault(size = 10) Pageable pageable,
+            @RequestParam(required = false) String status) {
+        StoreStatus storeStatus = null;
+        if (status != null && !status.isBlank()) {
+            try { storeStatus = StoreStatus.valueOf(status); }
+            catch (IllegalArgumentException ignored) {}
+        }
+        Page<StoreListDtoOnAdmin> dtoPage = adminService.findAllStore(pageable, storeStatus);
         return ResponseEntity.status(HttpStatus.OK).body(dtoPage);
     }
 
+//    매장 추가요청 승인/거절 -> PENDING, APPROVED, REJECTED
     @PatchMapping("/{storeId}/status")
     public ResponseEntity<?> updateStoreStatus(@PathVariable Long storeId, @RequestBody StoreStatusDto dto){
          adminService.updateStoreStatus(storeId, dto);
          return ResponseEntity.status(HttpStatus.OK).body("매장상태가 " + dto.getStatus() + "로 변경되었습니다");
     }
 
-    @PatchMapping("/renewal/{renewalId}/status")
-    public ResponseEntity<?> updateRenewalStatus(@PathVariable Long renewalId, @RequestBody RenewalStatusDto dto){
-        adminService.updateRenewalStatus(renewalId, dto);
-        return ResponseEntity.status(HttpStatus.OK).body("매장 연장요청 상태가 "+ dto.getStatus()+"로 변경되었습니다");
+//    매장 서비스이용 종료일 변경
+    @PatchMapping("/{storeId}/updateserviceendat")
+    public ResponseEntity<?> updateServiceEndAt(@PathVariable Long storeId, @RequestBody ReqServiceEndAtDto dto){
+        adminService.updateServiceEndAt(storeId, dto);
+        return ResponseEntity.status(HttpStatus.OK).body("서비스종료일이 " + dto.getClass() + "로 변경되었습니다");
     }
+
+
 }

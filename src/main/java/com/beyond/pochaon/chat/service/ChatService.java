@@ -7,6 +7,7 @@ import com.beyond.pochaon.chat.dto.ChatRoomDto;
 import com.beyond.pochaon.chat.repository.ChatRoomRepository;
 import com.beyond.pochaon.customerTable.domain.CustomerTable;
 import com.beyond.pochaon.customerTable.repository.CustomerTableRepository;
+import com.beyond.pochaon.present.dto.ReactionDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -232,6 +233,60 @@ public class ChatService {
 
         log.info("채팅방 종료 id={}", roomId);
     }
+
+
+
+    // ===============================
+    // 리액션 메시지 보내기 _rim
+    // ===============================
+
+    public ChatMessage sendReaction(ReactionDto reactionDto) {
+
+        ChatRoom room =getOrCreateChatRoom(reactionDto.getStoreId(), reactionDto.getReceiverTableNum(), reactionDto.getSenderTableNum());
+
+        ChatMessage message = ChatMessage.create(
+                room.getId(),
+                reactionDto.getSenderTableNum(),
+                reactionDto.getReaction()
+        );
+
+        String listKey = MESSAGE_LIST_KEY.formatted(room.getId());
+
+        chatRedisTemplate.opsForList().rightPush(listKey, message);
+
+        // 최근 100개만 유지
+        chatRedisTemplate.opsForList().trim(listKey, -100, -1);
+
+        chatRedisTemplate.expire(listKey, TTL);
+
+        // 마지막 메시지 저장
+        chatRedisTemplate.opsForValue().set(
+                LAST_MESSAGE_KEY.formatted(room.getId()),
+                reactionDto.getReaction(),
+                TTL
+        );
+
+        incrementUnreadCount(room.getId(), reactionDto.getReceiverTableNum());
+//        알람레디스로 연결
+        Map<String, Object> alarmData = Map.of(
+                "storeId", reactionDto.getStoreId(),
+                "senderTableNum", reactionDto.getSenderTableNum(),
+                "receiverTableNum", reactionDto.getReceiverTableNum(),
+                "chatRoomId", room.getId(),
+                "message", reactionDto.getReaction()
+        );
+
+        try {
+            ssePubSubChatRedisTemplate.convertAndSend("chatting-channel",objectMapper.writeValueAsString(alarmData));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return message;
+    }
+
+
+
+
 
     // ===============================
     // 내 활성 채팅방 목록

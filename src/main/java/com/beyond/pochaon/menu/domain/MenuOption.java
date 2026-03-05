@@ -21,7 +21,6 @@ public class MenuOption {
     private String optionName;
     @Enumerated(EnumType.STRING)
     private SelectionType selectionType;
-
     private Integer minSelect;
     private Integer maxSelect;
 

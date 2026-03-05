@@ -1,6 +1,7 @@
 package com.beyond.pochaon.present.dto;
 
 
+import com.beyond.pochaon.menu.domain.OrderAlarmTo;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -28,6 +29,7 @@ public class PresentOwnerDto {
     @Data
     public static class MenuDto {
         private String menuName;
+        private OrderAlarmTo orderAlarmTo;
         private int menuPrice;
         private int menuQuantity;
     }

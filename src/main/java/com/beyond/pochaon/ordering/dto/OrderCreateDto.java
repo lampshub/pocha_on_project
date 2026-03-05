@@ -1,9 +1,7 @@
 package com.beyond.pochaon.ordering.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.beyond.pochaon.menu.domain.OrderAlarmTo;
+import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +25,7 @@ public class OrderCreateDto {
     @Builder
     public static class WebMenu {
         private Long menuId;
+        private OrderAlarmTo orderAlarmTo;
         private String menuName;
         private int quantity;
         private int menuPrice;

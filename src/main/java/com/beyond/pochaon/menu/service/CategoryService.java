@@ -46,6 +46,7 @@ public class CategoryService {
                 .orElseThrow(() -> new EntityNotFoundException("Category not found"));
         ownerAuthHelper.verifyAll(category.getStore(), ctx);
         category.updateName(reqDto.getCategoryName());
+        category.updateOrderAlarmTo(reqDto.getOrderAlarmTo());
     }
 
     //    카테고리 삭제

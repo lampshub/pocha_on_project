@@ -1,6 +1,7 @@
 package com.beyond.pochaon.present.service;
 
 
+import com.beyond.pochaon.common.kafka.KafkaService;
 import com.beyond.pochaon.common.web.WebPublisher;
 import com.beyond.pochaon.customerTable.domain.CustomerTable;
 import com.beyond.pochaon.customerTable.repository.CustomerTableRepository;
@@ -32,14 +33,16 @@ public class PresentService {
     @Qualifier("groupRedisTemplate")
     private final RedisTemplate<String, String> groupRedisTemplate;
     private final WebPublisher webPublisher;
+    private final KafkaService kafkaService;
 
-    public PresentService(@Qualifier("idempotencyRedisTemplate") RedisTemplate<String, String> idempotencyRedisTemplate, OrderingRepository orderingRepository, CustomerTableRepository customerTableRepository, MenuRepository menuRepository,  @Qualifier("groupRedisTemplate") RedisTemplate<String, String> groupRedisTemplate, WebPublisher webPublisher) {
+    public PresentService(@Qualifier("idempotencyRedisTemplate") RedisTemplate<String, String> idempotencyRedisTemplate, OrderingRepository orderingRepository, CustomerTableRepository customerTableRepository, MenuRepository menuRepository, @Qualifier("groupRedisTemplate") RedisTemplate<String, String> groupRedisTemplate, WebPublisher webPublisher, KafkaService kafkaService) {
         this.idempotencyRedisTemplate = idempotencyRedisTemplate;
         this.orderingRepository = orderingRepository;
         this.customerTableRepository = customerTableRepository;
         this.menuRepository = menuRepository;
         this.groupRedisTemplate = groupRedisTemplate;
         this.webPublisher = webPublisher;
+        this.kafkaService = kafkaService;
     }
 
     //    멱등성
@@ -139,6 +142,7 @@ public class PresentService {
         PresentQueueDto.PresentDetail presentDetail = PresentQueueDto.PresentDetail.builder()
                 .menuName(menu.getMenuName())
                 .menuPrice(menu.getPrice())
+                .orderAlarmTo(menu.getCategory().getOrderAlarmTo())
                 .quantity(createDto.getMenuQuantity())
                 .build();
 
@@ -147,21 +151,22 @@ public class PresentService {
 
         PresentQueueDto queueDto= PresentQueueDto.builder()
                 .orderingId(QueOrdering.getId())
+                .type("PRESENT")
                 .senderTableId(sender.getCustomerTableId())
                 .receiverTableId(receiver.getCustomerTableId())
                 .receiverTableNum(receiver.getTableNum())
                 .totalPrice(totalPrice)
                 .orderStatus(QueOrdering.getOrderStatus())
-                .orderingDetailInfos(detailList)
+                .presentDetailList(detailList)
                 .build();
 
-        OwnerEventDto queueEventEto = OwnerEventDto.builder()
+        EventQueDto eventQueDto = EventQueDto.builder()
                 .eventType("PRESENT")
                 .storeId(sender.getStore().getId())
                 .payload(queueDto)
                 .build();
-        webPublisher.publish(queueEventEto);
-
+//        webPublisher.publish(queueEventDto);
+        kafkaService.orderQueueCreate(eventQueDto, eventQueDto.getStoreId());
 
 //    점주에게 보내기 db->ownerDto
 
@@ -170,6 +175,7 @@ public class PresentService {
         PresentOwnerDto.MenuDto menuDto =PresentOwnerDto.MenuDto.builder()
                 .menuName(menu.getMenuName())
                 .menuPrice(menu.getPrice())
+                .orderAlarmTo(menu.getCategory().getOrderAlarmTo())
                 .menuQuantity(createDto.getMenuQuantity())
                 .build();
         menuDtoList.add(menuDto);
@@ -188,8 +194,8 @@ public class PresentService {
                 .storeId(sender.getStore().getId())
                 .payload(ownerDto)
                 .build();
-        webPublisher.publish(eventDto);
-
+//        webPublisher.publish(eventDto);
+        kafkaService.orderCreate(eventDto, eventDto.getStoreId());
 
 //    상대테이블에 보내기 db->receiverDto
 

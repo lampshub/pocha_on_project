@@ -3,10 +3,7 @@ package com.beyond.pochaon.store.domain;
 import com.beyond.pochaon.common.BaseTimeEntity;
 import com.beyond.pochaon.owner.domain.Owner;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -35,6 +32,9 @@ public class Store extends BaseTimeEntity {
 
     private LocalTime storeOpenAt;
     private LocalTime storeCloseAt;
+
+    @Column(nullable = false)
+    private String storeAccessKey;
 
     @Enumerated(EnumType.STRING)
     @Builder.Default
@@ -88,5 +88,12 @@ public class Store extends BaseTimeEntity {
         return !today.isAfter(serviceEndAt) && !today.isBefore(getServiceEndAt().minusDays(7));
     }
 
+    public void updateServiceEndAt(LocalDate serviceEndAt) {
+        this.serviceEndAt = serviceEndAt;
+    }
+
+    public void updateStoreAccessKey(String encodedKey) {
+        this.storeAccessKey = encodedKey;
+    }
 
 }

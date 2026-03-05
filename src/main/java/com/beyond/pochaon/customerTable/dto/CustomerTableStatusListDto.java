@@ -48,7 +48,8 @@ public class                                                                    
         private Long orderingId;
         private int totalPrice;
         private OrderStatus orderStatus;
-        private PaymentStatus paymentState;
+        private PaymentStatus paymentStatus;
+        private boolean isPresent;
         private List<OrderingOption> orderingOptionList;
 
         public static OrderingList fromEntity(Ordering ordering) {
@@ -60,7 +61,8 @@ public class                                                                    
                     .orderingId(ordering.getId())
                     .totalPrice(ordering.getTotalPrice())
                     .orderStatus(ordering.getOrderStatus())
-                    .paymentState(ordering.getPaymentState())
+                    .paymentStatus(ordering.getPaymentStatus())
+                    .isPresent(Boolean.TRUE.equals(ordering.getIsPresent()))
                     .orderingOptionList(options)
                     .build();
         }

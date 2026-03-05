@@ -2,14 +2,12 @@ package com.beyond.pochaon.payment.controller;
 
 
 import com.beyond.pochaon.payment.dto.PaymentDto;
+import com.beyond.pochaon.payment.dto.PosConfirmReqDto;
 import com.beyond.pochaon.payment.service.PaymentService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
@@ -52,6 +50,11 @@ public class PaymentController {
         return ResponseEntity.ok(Map.of("message", "결제가 취소되었습니다"));
     }
 
+    @PostMapping("/pos/confirm")
+    public ResponseEntity<?> confirmPosPayment(@RequestBody PosConfirmReqDto dto) {
+        PaymentDto.ConfirmResponse response = paymentService.confirmPosPayment(dto);
+        return ResponseEntity.ok(response);
+    }
 
 
 }

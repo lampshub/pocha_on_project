@@ -1,5 +1,6 @@
 package com.beyond.pochaon.ingredient.repository;
 
+import com.beyond.pochaon.ingredient.domain.Ingredient;
 import com.beyond.pochaon.ingredient.domain.IngredientMenu;
 import com.beyond.pochaon.menu.domain.Menu;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -35,4 +36,6 @@ public interface IngredientMenuRepository extends JpaRepository<IngredientMenu, 
             "GROUP BY im.menu_id",
             nativeQuery = true)
     List<Object[]> findMenuCostByStoreId(@Param("storeId") Long storeId);
+
+    boolean existsByIngredient(Ingredient ingredient);
 }

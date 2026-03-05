@@ -1,6 +1,7 @@
 package com.beyond.pochaon.menu.dto;
 
 import com.beyond.pochaon.menu.domain.Category;
+import com.beyond.pochaon.menu.domain.OrderAlarmTo;
 import com.beyond.pochaon.store.domain.Store;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,10 +15,12 @@ import lombok.NoArgsConstructor;
 public class CategoryReqDto {
 // 카테고리 create, update 요청dto 같이 씀
     private String categoryName;
+    private OrderAlarmTo orderAlarmTo;
 
     public Category toEntity(Store store) {
         return Category.builder()
                 .categoryName(this.categoryName)
+                .orderAlarmTo(this.orderAlarmTo)
                 .store(store)
                 .build();
     }

@@ -1,12 +1,7 @@
 package com.beyond.pochaon.ingredient.service;
 
-import com.beyond.pochaon.ingredient.domain.Ingredient;
-import com.beyond.pochaon.ingredient.domain.IngredientDetail;
-import com.beyond.pochaon.ingredient.domain.IngredientLoss;
-import com.beyond.pochaon.ingredient.domain.IngredientMenu;
-import com.beyond.pochaon.ingredient.dtos.IngredientMenuSaveReqDto;
-import com.beyond.pochaon.ingredient.dtos.IngredientSaveReqDto;
-import com.beyond.pochaon.ingredient.dtos.IngredientUsageDto;
+import com.beyond.pochaon.ingredient.domain.*;
+import com.beyond.pochaon.ingredient.dtos.*;
 import com.beyond.pochaon.ingredient.kafka.event.OrderEvent;
 import com.beyond.pochaon.ingredient.kafka.event.QuantityAlertEvent;
 import com.beyond.pochaon.ingredient.kafka.event.QuantityDecreaseFailedEvent;
@@ -23,6 +18,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,11 +34,11 @@ public class IngredientService {
     private final IngredientDetailRepository detailRepository;
     private final MenuRepository menuRepository;
     private final IngredientMenuRepository ingredientMenuRepository;
-    private final KafkaTemplate<String, String> kafkaTemplate; // 알림도 String으로 전송
+    private final KafkaTemplate<String, Object> kafkaTemplate; // 알림도 String으로 전송
     private final ObjectMapper objectMapper;
     private final IngredientLossRepository ingredientLossRepository;
 
-    public IngredientService(IngredientRepository ingredientRepository, StoreRepository storeRepository, IngredientDetailRepository detailRepository, MenuRepository menuRepository, IngredientMenuRepository ingredientMenuRepository, KafkaTemplate<String, String> kafkaTemplate, ObjectMapper objectMapper, IngredientLossRepository ingredientLossRepository) {
+    public IngredientService(IngredientRepository ingredientRepository, StoreRepository storeRepository, IngredientDetailRepository detailRepository, MenuRepository menuRepository, IngredientMenuRepository ingredientMenuRepository, KafkaTemplate<String, Object> kafkaTemplate, ObjectMapper objectMapper, IngredientLossRepository ingredientLossRepository) {
         this.ingredientRepository = ingredientRepository;
         this.storeRepository = storeRepository;
         this.detailRepository = detailRepository;
@@ -65,6 +61,7 @@ public class IngredientService {
                             .name(dto.getName())
                             .type(dto.getType())
                             .safetyStock(dto.getSafetyStock())
+                            .unit(dto.getUnit() != null ? dto.getUnit() : "g")
                             .build();
                     return ingredientRepository.save(newIngredient);
                 });
@@ -139,43 +136,40 @@ public class IngredientService {
         List<IngredientMenu> recipes = ingredientMenuRepository.findByMenuId(event.getMenuId());
 
         if (recipes.isEmpty()) {
-            publishFailureEvent(event, "레시피 미등록 메뉴");
-            throw new RuntimeException("해당 메뉴에 등록된 레시피가 없습니다.");
+            return; // 레시피 미등록 메뉴는 재고 차감 스킵 (checkStockAvailability와 동일)
         }
         for (IngredientMenu recipe : recipes) {
             Ingredient ingredient = recipe.getIngredient();
-
-            // 총 필요량 = 메뉴 1개당 소모량 * 주문 수량
             double totalNeeded = recipe.getUsageAmount() * event.getQuantity();
 
-            // 2. FIFO: 유통기한 순으로 가용 재고 조회
             List<IngredientDetail> activeDetails = detailRepository
                     .findAllByIngredientAndCurrentQuantityGreaterThanOrderByDeadlineAsc(ingredient, 0);
 
             double remaining = totalNeeded;
             for (IngredientDetail detail : activeDetails) {
                 if (remaining <= 0) break;
-
                 int batchQty = detail.getCurrentQuantity();
-
                 if (batchQty >= remaining) {
-                    // [중요] '현재 수량 - 차감할 양'을 저장해야 합니다.
                     int decreaseAmount = (int) Math.ceil(remaining);
                     detail.updateCurrentQuantity(batchQty - decreaseAmount);
                     remaining = 0;
                 } else {
-                    // 현재 배치가 필요한 양보다 적다면, 전량 소모(0)하고 다음 배차로 이동
                     remaining -= batchQty;
                     detail.updateCurrentQuantity(0);
                 }
             }
+
+            //  재고 부족 시 실패 이벤트 발행 + 예외
+            if (remaining > 0) {
+                String reason = String.format("재고 부족: %s (필요: %.1f, 부족: %.1f)",
+                        ingredient.getName(), totalNeeded, remaining);
+                publishFailureEvent(event, reason);
+                throw new RuntimeException(reason);
+            }
         }
     }
 
-    //    유통기한 만료 재료 처리
-//     1. 잔량 있으면 -> ingredientLoss에 잔량 처리
-//    2. IngreDetail 하드 딜리트 (데이터 개수가 많아질까봐 소프트 딜리트 대신 하드딜리트 선택 )
-//    3. 스케쥴러로 사용허면 좋을 거같음
+//    유통기한 만료 재료 처리
     public int cleanupExpiredIngredients(Long storeId) {
         LocalDateTime now = LocalDateTime.now();
         List<IngredientDetail> expired = detailRepository.findExpiredWithStock(storeId, now);
@@ -188,6 +182,8 @@ public class IngredientService {
                         .ingredientName(d.getIngredient().getName())
                         .lostQuantity(d.getCurrentQuantity())
                         .unitPrice(d.getUnitPrice())
+                        .ingredientId(d.getIngredient().getId())
+                        .reason("유통기한 만료")
                         .lossAmount(d.getUnitPrice() * d.getCurrentQuantity())
                         .deadline(d.getDeadline())
                         .build();
@@ -218,5 +214,203 @@ public class IngredientService {
                 .build();
 
         kafkaTemplate.send("stock-decrease-failed", objectMapper.writeValueAsString(failEvent));
+    }
+
+//    모든 매장의 유통기한 지난 식자재 처리
+    public void cleanupExpiredIngredientsForAll() {
+        List<Store> stores = storeRepository.findAll();
+        for (Store store : stores) {
+            cleanupExpiredIngredients(store.getId());
+        }
+    }
+
+    //  전체 식자재 리스트 조회 (상태 배지 포함)
+    @Transactional(readOnly = true)
+    public List<IngredientListResDto> getIngredientList(Long storeId) {
+        List<Ingredient> ingredients = ingredientRepository.findByStoreId(storeId);
+
+        return ingredients.stream().map(ing -> {
+            // 해당 식자재의 전체 가용 재고 합산
+            Integer totalCurrent = detailRepository.sumCurrentQuantityByIngredient(ing);
+            int current = (totalCurrent != null) ? totalCurrent : 0;
+            int safety = ing.getSafetyStock();
+
+            // 배지 색상 결정 로직
+            StockStatus status = calculateStockStatus(current, ing.getSafetyStock());
+
+            return IngredientListResDto.builder()
+                    .ingredientId(ing.getId())
+                    .name(ing.getName())
+                    .type(ing.getType())
+                    .currentStock(current)
+                    .safetyStock(ing.getSafetyStock())
+                    .status(status) // Enum 주입
+                    .unit(ing.getUnit())
+                    .build();
+        }).toList();
+    }
+
+    //  특정 메뉴의 레시피 리스트 조회
+    @Transactional(readOnly = true)
+    public RecipeDetailResDto getRecipeByMenu(Long menuId) {
+        Menu menu = menuRepository.findById(menuId)
+                .orElseThrow(() -> new EntityNotFoundException("메뉴를 찾을 수 없습니다."));
+
+        List<IngredientMenu> recipes = ingredientMenuRepository.findByMenuId(menuId);
+
+        List<RecipeDetailResDto.IngredientUsageInfo> ingredientInfos = recipes.stream()
+                .map(r -> RecipeDetailResDto.IngredientUsageInfo.builder()
+                        .ingredientId(r.getIngredient().getId())
+                        .ingredientName(r.getIngredient().getName())
+                        .usageAmount(r.getUsageAmount())
+                        .unit(r.getIngredient().getUnit())
+                        .build())
+                .toList();
+
+        return RecipeDetailResDto.builder()
+                .menuId(menu.getId())
+                .menuName(menu.getMenuName())
+                .ingredients(ingredientInfos)
+                .build();
+    }
+
+    // 배지 색상 계산 내부 메서드
+    private StockStatus calculateStockStatus(int current, int safety) {
+        if (safety <= 0) return StockStatus.GREEN;
+
+        double ratio = (double) current / safety;
+
+//        0~50% 남았으면 빨간색 알림
+        if (ratio < 0.5) {
+            return StockStatus.RED;
+        }
+//        50~100% 남았으면 노란색 알림
+        else if (ratio <= 1.0) {
+            return StockStatus.YELLOW;
+        }
+//        그 이상이면 초록색 알림
+        else {
+            return StockStatus.GREEN;
+        }
+    }
+
+    //  식자재 메타 정보 수정
+    public void updateIngredient(Long ingredientId, IngredientUpdateReqDto dto) {
+        Ingredient ingredient = ingredientRepository.findById(ingredientId)
+                .orElseThrow(() -> new EntityNotFoundException("식자재를 찾을 수 없습니다."));
+
+        // 값이 들어온 경우에만 업데이트
+        if (dto.getName() != null) ingredient.modifyName(dto.getName());
+        if (dto.getType() != null) ingredient.modifyType(dto.getType());
+        if (dto.getSafetyStock() != null) ingredient.modifySafetyStock(dto.getSafetyStock());
+        if (dto.getUnit() != null) ingredient.modifyUnit(dto.getUnit());
+    }
+
+    //  식자재 삭제
+    public void deleteIngredient(Long ingredientId) {
+        Ingredient ingredient = ingredientRepository.findById(ingredientId)
+                .orElseThrow(() -> new EntityNotFoundException("식자재를 찾을 수 없습니다."));
+
+        // 레시피에 등록되어 있다면 삭제 불가하게 처리하거나, 레시피부터 삭제 유도
+        if (ingredientMenuRepository.existsByIngredient(ingredient)) {
+            throw new RuntimeException("레시피에 등록된 식자재는 삭제할 수 없습니다. 레시피를 먼저 수정하세요.");
+        }
+
+        ingredientRepository.delete(ingredient);
+    }
+
+    //  실재고 조정
+    public void adjustStock(Long ingredientId, StockAdjustReqDto dto) {
+        Ingredient ingredient = ingredientRepository.findById(ingredientId)
+                .orElseThrow(() -> new EntityNotFoundException("식자재를 찾을 수 없습니다."));
+
+        // 1. 현재 전산상의 총 재고 합계 조회
+        Integer currentTotal = detailRepository.sumCurrentQuantityByIngredient(ingredient);
+        int total = (currentTotal != null) ? currentTotal : 0;
+
+        // 2. 차이 계산 (전산 - 실제)
+        int diff = total - dto.getActualQuantity();
+
+        if (diff > 0) {
+            //  재고가 부족한 경우 (분실/파손 등) -> FIFO 차감 및 Loss 기록
+            adjustDecrease(ingredient, diff, dto.getReason());
+        } else if (diff < 0) {
+            //  재고가 더 많은 경우 (입고 누락 등) -> 가장 최근 배차에 추가
+            adjustIncrease(ingredient, Math.abs(diff));
+        }
+
+        log.info("재고 조정 완료: {} (전산: {} -> 실제: {})", ingredient.getName(), total, dto.getActualQuantity());
+    }
+
+    private void adjustDecrease(Ingredient ingredient, int amountToDecrease, String reason) {
+        // 유통기한 순으로 가용 재고 조회
+        List<IngredientDetail> activeDetails = detailRepository
+                .findAllByIngredientAndCurrentQuantityGreaterThanOrderByDeadlineAsc(ingredient, 0);
+
+        int remaining = amountToDecrease;
+        for (IngredientDetail detail : activeDetails) {
+            if (remaining <= 0) break;
+
+            int currentQty = detail.getCurrentQuantity();
+            int take = Math.min(currentQty, remaining);
+
+            // 상세 재고 차감
+            detail.updateCurrentQuantity(currentQty - take);
+
+            // Loss(손실) 테이블에 기록
+            IngredientLoss loss = IngredientLoss.builder()
+                    .store(ingredient.getStore())
+                    .ingredientName(ingredient.getName())
+                    .lostQuantity(take)
+                    .unitPrice(detail.getUnitPrice())
+                    .lossAmount(take * detail.getUnitPrice())
+                    .deadline(detail.getDeadline())
+                    .reason("수동 조정: " + reason) // 사유 기록
+                    .build();
+            ingredientLossRepository.save(loss);
+
+            remaining -= take;
+        }
+    }
+
+//    매일 자정 스케줄러 -> 유통기한 지난 식자재 Loss 테이블에 기록
+    private void adjustIncrease(Ingredient ingredient, int amountToIncrease) {
+        // 가장 유통기한이 넉넉한(마지막) 배차를 찾아 수량 추가
+        // 만약 배차가 하나도 없다면 새로 생성하거나 예외 처리가 필요할 수 있습니다.
+        List<IngredientDetail> details = detailRepository
+                .findAllByIngredientAndCurrentQuantityGreaterThanOrderByDeadlineDesc(ingredient, 0);
+
+        if (!details.isEmpty()) {
+            IngredientDetail latest = details.get(0);
+            latest.updateCurrentQuantity(latest.getCurrentQuantity() + amountToIncrease);
+        } else {
+            throw new RuntimeException("증액할 기존 입고 이력이 없습니다. '입고 등록'을 이용해 주세요.");
+        }
+    }
+
+//    재고 가용성 확인
+    @Transactional(readOnly = true)
+    public String checkStockAvailability(Long menuId, int quantity) {
+        List<IngredientMenu> recipes = ingredientMenuRepository.findByMenuId(menuId);
+
+        if (recipes.isEmpty()) {
+            return null; // 레시피 미등록 메뉴는 재고 검증 스킵
+        }
+
+        for (IngredientMenu recipe : recipes) {
+            Ingredient ingredient = recipe.getIngredient();
+            double totalNeeded = recipe.getUsageAmount() * quantity;
+
+            // 현재 가용 재고 합산
+            Integer totalCurrent = detailRepository.sumCurrentQuantityByIngredient(ingredient);
+            int available = (totalCurrent != null) ? totalCurrent : 0;
+
+            if (available < totalNeeded) {
+                return String.format("%s (필요: %.0f, 가용: %d)",
+                        ingredient.getName(), totalNeeded, available);
+            }
+        }
+
+        return null; // 모든 식자재 충분
     }
 }

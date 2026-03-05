@@ -26,7 +26,7 @@ public class WebPublisher {
 
         this.tableredisTemplate = tableredisTemplate;
     }
-//  일반주문 (일반, 선물)
+////  일반주문 (일반, 선물)
     public void publish(OwnerEventDto eventDto) {
         log.info("REDIS PUBLISH 성공 channel=owner-event, type={}, storeId={}",
                 eventDto.getEventType(), eventDto.getStoreId());

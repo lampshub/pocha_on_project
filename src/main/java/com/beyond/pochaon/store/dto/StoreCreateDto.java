@@ -18,5 +18,6 @@ public class StoreCreateDto {
     private String phoneNumber;
     private LocalDate serviceStartAt;
     private boolean autoRenew;
+    private String storeAccessKey;
 
 }

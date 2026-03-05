@@ -13,6 +13,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.context.request.async.AsyncRequestTimeoutException;
 
 import java.util.NoSuchElementException;
 
@@ -38,6 +39,11 @@ public class CommonExceptionHandler {
                 .errorMessage(e.getFieldError().getDefaultMessage())
                 .build();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ce_dto);
+    }
+
+    @ExceptionHandler(AsyncRequestTimeoutException.class)
+    public ResponseEntity<Void> handleAsyncTimeout(AsyncRequestTimeoutException e) {
+        return ResponseEntity.noContent().build();
     }
 
     @ExceptionHandler(NoSuchElementException.class)

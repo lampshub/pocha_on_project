@@ -7,7 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -75,6 +74,9 @@ public interface IngredientDetailRepository extends JpaRepository<IngredientDeta
     @Query("SELECT COALESCE(SUM(d.totalPrice), 0) FROM IngredientDetail d " +
             "WHERE d.ingredient.store.id = :storeId")
     int sumAllTotalPriceByStore(@Param("storeId") Long storeId);
+
+
+    List<IngredientDetail> findAllByIngredientAndCurrentQuantityGreaterThanOrderByDeadlineDesc(Ingredient ingredient, int quantity);
 
     // ══════════════════════════════════════════════
     //  ★ 전체 매장 배치 쿼리 (N+1 방지)

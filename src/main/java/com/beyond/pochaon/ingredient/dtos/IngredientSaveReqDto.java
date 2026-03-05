@@ -19,4 +19,5 @@ public class IngredientSaveReqDto {
     private int quantity;          // 이번에 들어온 수량
     private int totalPrice;        // 이번 입고 총액
     private LocalDateTime deadline; // 유통기한
+    private String unit;           // 측정 단위 (g, kg, ml, L, 개, 병, 팩)
 }

@@ -4,6 +4,7 @@ package com.beyond.pochaon.chat.controller;
 import com.beyond.pochaon.chat.domain.ChatMessage;
 import com.beyond.pochaon.chat.dto.ChatMessageDto;
 import com.beyond.pochaon.chat.service.ChatService;
+import com.beyond.pochaon.present.dto.ReactionDto;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -55,5 +56,18 @@ public class ChatWebSocketController {
                         "chatRoomId", chatRoomId
                 )
         );
+    }
+
+    @MessageMapping("/chat/reaction")
+    public void sendReaction(@Payload ReactionDto reactionDto){
+        ChatMessage savedMessage = chatService.sendReaction(reactionDto);
+//        선물 보낸 테이블 팝업
+        messagingTemplate.convertAndSend(
+                "/topic/reaction/" + reactionDto.getReceiverTableNum(),savedMessage
+        );
+//        리액션보낸 테이블 ->채팅방 개설
+//        messagingTemplate.convertAndSend(
+//                "/topic/reaction/opened" + reactionDto.getSenderTableNum(),savedMessage
+//        );
     }
 }

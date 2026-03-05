@@ -1,12 +1,12 @@
 package com.beyond.pochaon.common.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.beyond.pochaon.cart.domain.RedisCartItem;
 import com.beyond.pochaon.common.service.SseAlarmService;
 import com.beyond.pochaon.common.service.SseChatAlarmService;
 import com.beyond.pochaon.common.web.WebSubscriber;
 import com.beyond.pochaon.present.dto.OwnerEventDto;
 import com.beyond.pochaon.present.dto.PresentReceiverDto;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -64,6 +64,11 @@ public class RedisConfig {
     @Value("${spring.redis.port6}")
     private int smsPort;
 
+    @Value("${spring.redis.host7}")
+    private String loginHost;
+    @Value("${spring.redis.port7}")
+    private int loginPort;
+
     @Value("${spring.redis.host8}")
     private String host8;
     @Value("${spring.redis.port8}")
@@ -101,27 +106,6 @@ public class RedisConfig {
         template.setValueSerializer(new StringRedisSerializer());
         return template;
     }
-
-
-//    // UUID Redis
-//    @Bean("uuidConnection")
-//    public RedisConnectionFactory uuidConnectionFactory() {
-//        RedisStandaloneConfiguration config = new RedisStandaloneConfiguration();
-//        config.setHostName(host3);
-//        config.setPort(port3);
-//        config.setDatabase(0);
-//        return new LettuceConnectionFactory(config);
-//    }
-
-//    @Bean("uuid")
-//    public RedisTemplate<String, String> uuidRedisTemplate(
-//            @Qualifier("uuidConnection") RedisConnectionFactory factory) {
-//        RedisTemplate<String, String> t = new RedisTemplate<>();
-//        t.setConnectionFactory(factory);
-//        t.setKeySerializer(new StringRedisSerializer());
-//        t.setValueSerializer(new StringRedisSerializer());
-//        return t;
-//    }
 
     // Email 인증 Redis
     @Bean("emailConnection")
@@ -305,7 +289,7 @@ public class RedisConfig {
     }
 
 
-    // pubsup -guest/owner** redis 8번
+    // pubsup -guest/owner** redis 8번 (테이블간 선물알림)
     @Bean
     public RedisConnectionFactory pubsubRedisConnectionFactory() {
         return new LettuceConnectionFactory(host8, port8);
@@ -332,24 +316,31 @@ public class RedisConfig {
 
 
     //     t-order채널 구독
+//    @Bean
+//    public RedisMessageListenerContainer redisContainer(@Qualifier("pubsubRedisConnectionFactory") RedisConnectionFactory connectionFactory, @Qualifier("listenerAdapter") MessageListenerAdapter listenerAdapter, @Qualifier("orderTopic") ChannelTopic orderTopic, @Qualifier("tableAdapter") MessageListenerAdapter tableAdapter, @Qualifier("tableTopic") ChannelTopic tableTopic) {
+//        RedisMessageListenerContainer container = new RedisMessageListenerContainer();
+//        container.setConnectionFactory(connectionFactory);
+//
+//        container.addMessageListener(listenerAdapter, orderTopic);
+//        container.addMessageListener(tableAdapter, tableTopic);
+//        return container;
+//    }
+
+    //    @Bean
+//    public MessageListenerAdapter listenerAdapter(WebSubscriber subscriber) {
+//        Jackson2JsonRedisSerializer<OwnerEventDto> serializer = new Jackson2JsonRedisSerializer<>(OwnerEventDto.class);
+//        MessageListenerAdapter adapter = new MessageListenerAdapter(subscriber, "onMessage");
+//        adapter.setSerializer(serializer);
+//        return adapter;
+//    }
+//     t-present만 채널 구독
     @Bean
-    public RedisMessageListenerContainer redisContainer(@Qualifier("pubsubRedisConnectionFactory") RedisConnectionFactory connectionFactory, @Qualifier("listenerAdapter") MessageListenerAdapter listenerAdapter, @Qualifier("orderTopic") ChannelTopic orderTopic, @Qualifier("tableAdapter") MessageListenerAdapter tableAdapter, @Qualifier("tableTopic") ChannelTopic tableTopic) {
+    public RedisMessageListenerContainer redisContainer(@Qualifier("pubsubRedisConnectionFactory") RedisConnectionFactory connectionFactory, @Qualifier("tableAdapter") MessageListenerAdapter tableAdapter, @Qualifier("tableTopic") ChannelTopic tableTopic) {
         RedisMessageListenerContainer container = new RedisMessageListenerContainer();
         container.setConnectionFactory(connectionFactory);
-
-        container.addMessageListener(listenerAdapter, orderTopic);
         container.addMessageListener(tableAdapter, tableTopic);
         return container;
     }
-
-    @Bean
-    public MessageListenerAdapter listenerAdapter(WebSubscriber subscriber) {
-        Jackson2JsonRedisSerializer<OwnerEventDto> serializer = new Jackson2JsonRedisSerializer<>(OwnerEventDto.class);
-        MessageListenerAdapter adapter = new MessageListenerAdapter(subscriber, "onMessage");
-        adapter.setSerializer(serializer);
-        return adapter;
-    }
-
 
     //    table전송용
     @Bean
@@ -408,6 +399,27 @@ public class RedisConfig {
         template.setHashValueSerializer(serializer);
 
         return template;
+    }
+
+
+    @Bean
+    @Qualifier("isLogin")
+    public RedisConnectionFactory isLoginConnectionFactory() {
+        RedisStandaloneConfiguration configuration = new RedisStandaloneConfiguration();
+        configuration.setHostName(loginHost);
+        configuration.setPort(loginPort);
+        configuration.setDatabase(0);
+        return new LettuceConnectionFactory(configuration);
+    }
+
+    @Bean
+    @Qualifier("isLogin")
+    public RedisTemplate<String, String> isLoginRedisTemplate(@Qualifier("isLogin") RedisConnectionFactory redisConnectionFactory) {
+        RedisTemplate<String, String> redisTemplate = new RedisTemplate<>();
+        redisTemplate.setKeySerializer(new StringRedisSerializer());
+        redisTemplate.setValueSerializer(new StringRedisSerializer());
+        redisTemplate.setConnectionFactory(redisConnectionFactory);
+        return redisTemplate;
     }
 }
 

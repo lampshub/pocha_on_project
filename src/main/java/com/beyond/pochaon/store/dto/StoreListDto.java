@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Data
 @NoArgsConstructor
@@ -21,7 +22,6 @@ public class StoreListDto {
     private String phoneNumber;
     private StoreStatus status;
     private UsageStatus usageStatus;
-    private RenewalRequestStatus renewalRequestStatus; //연장 신청 상태
 
     private LocalDate serviceStartAt;
     private LocalDate serviceEndAt;
@@ -33,10 +33,7 @@ public class StoreListDto {
     private LocalDateTime processedAt;      //추가 승인/거절 처리일
     private String rejectedReason;
 
-    private LocalDateTime renewProcessedAt;      //연장 승인/거절 처리일
-    private String renewRejectedReason;
-
-    public static StoreListDto fromEntity(Store store, StoreRenewalRequest renewalRequest){
+    public static StoreListDto fromEntity(Store store){
         return  StoreListDto.builder()
                 .id(store.getId())
                 .StoreName(store.getStoreName())
@@ -44,7 +41,6 @@ public class StoreListDto {
                 .phoneNumber(store.getPhoneNumber())
                 .status(store.getStatus())
                 .usageStatus(store.getUsageStatus())
-                .renewalRequestStatus(renewalRequest != null ? renewalRequest.getRequestStatus() : null)
                 .serviceStartAt(store.getServiceStartAt())
                 .serviceEndAt(store.getServiceEndAt())
                 .autoRenew(store.isAutoRenew())
@@ -52,8 +48,6 @@ public class StoreListDto {
                 .createTimeAt(store.getCreateTimeAt())
                 .processedAt(store.getProcessedAt())
                 .rejectedReason(store.getRejectReason())
-                .renewProcessedAt(renewalRequest != null ? renewalRequest.getProcessedAt() : null)
-                .renewRejectedReason(renewalRequest != null ? renewalRequest.getRejectedReason() : null)
                 .build();
     }
 }

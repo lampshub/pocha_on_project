@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -17,5 +18,5 @@ public interface IngredientRepository extends JpaRepository<Ingredient, Long> {
     @Query("select i from Ingredient i where i.store.id = :storeId and i.name = :name")
     Optional<Ingredient> findByStoreIdAndNameWithLock(@Param("storeId") Long storeId, @Param("name") String name);
 
-
+    List<Ingredient> findByStoreId(Long storeId);
 }

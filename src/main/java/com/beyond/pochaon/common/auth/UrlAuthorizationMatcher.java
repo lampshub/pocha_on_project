@@ -11,16 +11,19 @@ public class UrlAuthorizationMatcher {
     static {
         //  반드시 구체 경로 → 범용 경로 순서
 
+        RULES.put("/store/select/settlement", List.of(TokenStage.BASE, TokenStage.STORE));
+        RULES.put("/store/delete/", List.of(TokenStage.BASE));
         RULES.put("/owner/base", List.of(TokenStage.BASE));
         RULES.put("/store/dailysettlement", List.of(TokenStage.BASE, TokenStage.STORE));
+        RULES.put("/store/dailyorders", List.of(TokenStage.BASE, TokenStage.STORE));
+        RULES.put("/store/settlement", List.of(TokenStage.BASE, TokenStage.STORE));
+        RULES.put("/store/islogin", List.of(TokenStage.BASE, TokenStage.STORE));
         RULES.put("/store/select", List.of(TokenStage.BASE, TokenStage.STORE));
         RULES.put("/store/create", List.of(TokenStage.BASE));
-        RULES.put("/store/dailyorders", List.of(TokenStage.BASE, TokenStage.STORE));
         RULES.put("/store/list", List.of(TokenStage.BASE, TokenStage.STORE));
-        RULES.put("/store/settlement", List.of(TokenStage.BASE, TokenStage.STORE));
-        RULES.put("/store", List.of(TokenStage.STORE));
+        RULES.put("/store/", List.of(TokenStage.BASE,TokenStage.STORE));
+        RULES.put("/store", List.of(TokenStage.BASE,TokenStage.STORE));
         RULES.put("/ingredient", List.of(TokenStage.STORE));
-
         RULES.put("/customertable", List.of(TokenStage.STORE, TokenStage.BASE, TokenStage.TABLE));
 
 

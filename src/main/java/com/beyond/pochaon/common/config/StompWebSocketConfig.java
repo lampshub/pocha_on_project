@@ -25,8 +25,6 @@ public class StompWebSocketConfig implements WebSocketMessageBrokerConfigurer {
     }
 
 
-
-
     @Override
     @Qualifier("order")
     public void registerStompEndpoints(StompEndpointRegistry registry){

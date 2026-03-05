@@ -25,12 +25,15 @@ public class IngredientLoss extends BaseTimeEntity {
     @JoinColumn(name = "store_id", nullable = false)
     private Store store;
 
+    private Long ingredientId; // 재료 Id
+
     @Column(nullable = false)
     private String ingredientName;  // 재료명 (삭제 후에도 이름 유지)
 
     private int lostQuantity;       // 폐기 수량
     private int unitPrice;          // 개당 단가
     private int lossAmount;         // 로스 금액 (단가 × 수량)
+    private String reason;
 
     private LocalDateTime deadline; // 유통기한 (기록용)
 }

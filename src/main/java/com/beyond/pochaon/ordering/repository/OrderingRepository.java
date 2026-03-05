@@ -42,17 +42,17 @@ public interface OrderingRepository extends JpaRepository<Ordering, Long> {
 
     //    정산용
 //    특정 시간 내에 승인된 결제와 연관된 주문들을 조회
-    // PaymentState가 DONE 것만 합산
+    // PaymentStatus가 DONE 것만 합산
 // OrderingRepository.java
     @Query("SELECT COALESCE(SUM(o.totalPrice), 0) FROM Ordering o " +
             "WHERE o.customerTable.store.id = :storeId " +
-            "AND o.paymentState = 'DONE' " +
+            "AND o.paymentStatus = 'DONE' " +
             "AND o.createTimeAt >= :openedAt AND o.createTimeAt <= :closedAt")
     int sumTotalRevenue(@Param("storeId") Long storeId,
                         @Param("openedAt") LocalDateTime openedAt,
                         @Param("closedAt") LocalDateTime closedAt);
 
-    @Query("SELECT COUNT(DISTINCT o.id) FROM Ordering o WHERE o.customerTable.store.id = :storeId AND o.paymentState = 'DONE'AND o.createTimeAt >= :openedAt AND o.createTimeAt <= :closedAt")
+    @Query("SELECT COUNT(DISTINCT o.id) FROM Ordering o WHERE o.customerTable.store.id = :storeId AND o.paymentStatus = 'DONE'AND o.createTimeAt >= :openedAt AND o.createTimeAt <= :closedAt")
     int countCompletedOrders(
             @Param("storeId") Long storeId,
             @Param("openedAt") LocalDateTime openedAt,
@@ -78,7 +78,7 @@ public interface OrderingRepository extends JpaRepository<Ordering, Long> {
     // 테이블별 이용 횟수 (distinct groupId 기준)
     @Query("SELECT COUNT(DISTINCT o.groupId) FROM Ordering o " +
             "WHERE o.customerTable.store.id = :storeId " +
-            "AND o.paymentState = 'DONE' " +
+            "AND o.paymentStatus = 'DONE' " +
             "AND o.createTimeAt >= :startAt AND o.createTimeAt < :endAt")
     int countDistinctGroupIds(@Param("storeId") Long storeId,
                               @Param("startAt") LocalDateTime startAt,
@@ -92,7 +92,7 @@ public interface OrderingRepository extends JpaRepository<Ordering, Long> {
             "LEFT JOIN FETCH od.menu m " +
             "LEFT JOIN FETCH m.category " +
             "WHERE ct.store.id = :storeId " +
-            "AND o.paymentState = 'DONE' " +
+            "AND o.paymentStatus = 'DONE' " +
             "AND o.createTimeAt >= :startAt AND o.createTimeAt < :endAt " +
             "ORDER BY o.createTimeAt DESC")
     List<Ordering> findCompletedOrdersWithDetails(@Param("storeId") Long storeId,
@@ -118,7 +118,7 @@ public interface OrderingRepository extends JpaRepository<Ordering, Long> {
     @Query("SELECT FUNCTION('HOUR', o.createTimeAt), COALESCE(SUM(o.totalPrice), 0) " +
             "FROM Ordering o " +
             "WHERE o.customerTable.store.id = :storeId " +
-            "AND o.paymentState = 'DONE' " +
+            "AND o.paymentStatus = 'DONE' " +
             "AND o.createTimeAt >= :startAt AND o.createTimeAt < :endAt " +
             "GROUP BY FUNCTION('HOUR', o.createTimeAt) " +
             "ORDER BY FUNCTION('HOUR', o.createTimeAt)")
@@ -131,7 +131,7 @@ public interface OrderingRepository extends JpaRepository<Ordering, Long> {
     @Query("SELECT FUNCTION('DAYOFWEEK', o.createTimeAt), COALESCE(SUM(o.totalPrice), 0) " +
             "FROM Ordering o " +
             "WHERE o.customerTable.store.id = :storeId " +
-            "AND o.paymentState = 'DONE' " +
+            "AND o.paymentStatus = 'DONE' " +
             "AND o.createTimeAt >= :startAt AND o.createTimeAt < :endAt " +
             "GROUP BY FUNCTION('DAYOFWEEK', o.createTimeAt) " +
             "ORDER BY FUNCTION('DAYOFWEEK', o.createTimeAt)")
@@ -143,7 +143,7 @@ public interface OrderingRepository extends JpaRepository<Ordering, Long> {
     @Query("SELECT ct.tableNum, COALESCE(SUM(o.totalPrice), 0), COUNT(DISTINCT o.id) " +
             "FROM Ordering o JOIN o.customerTable ct " +
             "WHERE ct.store.id = :storeId " +
-            "AND o.paymentState = 'DONE' " +
+            "AND o.paymentStatus = 'DONE' " +
             "AND o.createTimeAt >= :startAt AND o.createTimeAt < :endAt " +
             "GROUP BY ct.tableNum " +
             "ORDER BY SUM(o.totalPrice) DESC")
@@ -155,7 +155,7 @@ public interface OrderingRepository extends JpaRepository<Ordering, Long> {
     @Query("SELECT ct.tableNum, COUNT(DISTINCT o.groupId) " +
             "FROM Ordering o JOIN o.customerTable ct " +
             "WHERE ct.store.id = :storeId " +
-            "AND o.paymentState = 'DONE' " +
+            "AND o.paymentStatus = 'DONE' " +
             "AND o.createTimeAt >= :startAt AND o.createTimeAt < :endAt " +
             "GROUP BY ct.tableNum " +
             "ORDER BY ct.tableNum")
@@ -169,8 +169,8 @@ public interface OrderingRepository extends JpaRepository<Ordering, Long> {
      * 반환: [날짜(java.sql.Date), 매출합계(Long), 완료주문수(Long), 취소주문수(Long)]
      */
     @Query(value = "SELECT DATE(o.create_time_at) AS sale_date, " +
-            "COALESCE(SUM(CASE WHEN o.payment_state = 'DONE' THEN o.total_price ELSE 0 END), 0), " +
-            "COUNT(DISTINCT CASE WHEN o.payment_state = 'DONE' THEN o.id END), " +
+            "COALESCE(SUM(CASE WHEN o.payment_Status = 'DONE' THEN o.total_price ELSE 0 END), 0), " +
+            "COUNT(DISTINCT CASE WHEN o.payment_Status = 'DONE' THEN o.id END), " +
             "COUNT(DISTINCT CASE WHEN o.order_status = 'CANCELLED' THEN o.id END) " +
             "FROM ordering o " +
             "JOIN customer_table ct ON o.table_id = ct.customer_table_id " +
@@ -183,48 +183,12 @@ public interface OrderingRepository extends JpaRepository<Ordering, Long> {
                                   @Param("startAt") LocalDateTime startAt,
                                   @Param("endAt") LocalDateTime endAt);
 
-    /**
-     * 일별 테이블 이용 횟수 (distinct groupId)
-     * 반환: [날짜(java.sql.Date), 이용횟수(Long)]
-     */
-    @Query(value = "SELECT DATE(o.create_time_at) AS sale_date, " +
-            "COUNT(DISTINCT o.group_id) " +
-            "FROM ordering o " +
-            "JOIN customer_table ct ON o.table_id = ct.customer_table_id " +
-            "WHERE ct.store_id = :storeId " +
-            "AND o.payment_state = 'DONE' " +
-            "AND o.create_time_at >= :startAt AND o.create_time_at < :endAt " +
-            "GROUP BY DATE(o.create_time_at) " +
-            "ORDER BY sale_date",
-            nativeQuery = true)
-    List<Object[]> countGroupIdsByDate(@Param("storeId") Long storeId,
-                                       @Param("startAt") LocalDateTime startAt,
-                                       @Param("endAt") LocalDateTime endAt);
 
-    /**
-     * 월별 매출 합계 (연간 차트용)
-     * 반환: [월(Integer), 매출합계(Long)]
-     */
-    @Query(value = "SELECT MONTH(o.create_time_at), " +
-            "COALESCE(SUM(CASE WHEN o.payment_state = 'DONE' THEN o.total_price ELSE 0 END), 0) " +
-            "FROM ordering o " +
-            "JOIN customer_table ct ON o.table_id = ct.customer_table_id " +
-            "WHERE ct.store_id = :storeId " +
-            "AND YEAR(o.create_time_at) = :year " +
-            "GROUP BY MONTH(o.create_time_at) " +
-            "ORDER BY MONTH(o.create_time_at)",
-            nativeQuery = true)
-    List<Object[]> sumSalesByMonth(@Param("storeId") Long storeId,
-                                   @Param("year") int year);
-
-    // ══════════════════════════════════════════════
-    //  ★ 전체 매장 배치 쿼리 (N+1 방지)
-    // ══════════════════════════════════════════════
 
     // 다중 매장 합산 매출
     @Query("SELECT COALESCE(SUM(o.totalPrice), 0) FROM Ordering o " +
             "WHERE o.customerTable.store.id IN :storeIds " +
-            "AND o.paymentState = 'DONE' " +
+            "AND o.paymentStatus = 'DONE' " +
             "AND o.createTimeAt >= :startAt AND o.createTimeAt < :endAt")
     int sumTotalRevenueByStores(@Param("storeIds") List<Long> storeIds,
                                 @Param("startAt") LocalDateTime startAt,
@@ -233,7 +197,7 @@ public interface OrderingRepository extends JpaRepository<Ordering, Long> {
     // 다중 매장 완료 주문 수
     @Query("SELECT COUNT(DISTINCT o.id) FROM Ordering o " +
             "WHERE o.customerTable.store.id IN :storeIds " +
-            "AND o.paymentState = 'DONE' " +
+            "AND o.paymentStatus = 'DONE' " +
             "AND o.createTimeAt >= :startAt AND o.createTimeAt < :endAt")
     int countCompletedOrdersByStores(@Param("storeIds") List<Long> storeIds,
                                      @Param("startAt") LocalDateTime startAt,
@@ -253,7 +217,7 @@ public interface OrderingRepository extends JpaRepository<Ordering, Long> {
             "FROM ordering o " +
             "JOIN customer_table ct ON o.table_id = ct.customer_table_id " +
             "WHERE ct.store_id IN :storeIds " +
-            "AND o.payment_state = 'DONE' " +
+            "AND o.payment_Status= 'DONE' " +
             "AND o.create_time_at >= :startAt AND o.create_time_at < :endAt " +
             "GROUP BY DATE(o.create_time_at) ORDER BY sale_date",
             nativeQuery = true)
@@ -268,7 +232,7 @@ public interface OrderingRepository extends JpaRepository<Ordering, Long> {
             "FROM ordering o " +
             "JOIN customer_table ct ON o.table_id = ct.customer_table_id " +
             "WHERE ct.store_id IN :storeIds " +
-            "AND o.payment_state = 'DONE' " +
+            "AND o.payment_Status = 'DONE' " +
             "AND o.create_time_at >= :startAt AND o.create_time_at < :endAt " +
             "GROUP BY ct.store_id",
             nativeQuery = true)
@@ -280,7 +244,7 @@ public interface OrderingRepository extends JpaRepository<Ordering, Long> {
     @Query("SELECT FUNCTION('HOUR', o.createTimeAt), COALESCE(SUM(o.totalPrice), 0) " +
             "FROM Ordering o " +
             "WHERE o.customerTable.store.id IN :storeIds " +
-            "AND o.paymentState = 'DONE' " +
+            "AND o.paymentStatus = 'DONE' " +
             "AND o.createTimeAt >= :startAt AND o.createTimeAt < :endAt " +
             "GROUP BY FUNCTION('HOUR', o.createTimeAt) " +
             "ORDER BY FUNCTION('HOUR', o.createTimeAt)")
@@ -292,7 +256,7 @@ public interface OrderingRepository extends JpaRepository<Ordering, Long> {
     @Query("SELECT FUNCTION('DAYOFWEEK', o.createTimeAt), COALESCE(SUM(o.totalPrice), 0) " +
             "FROM Ordering o " +
             "WHERE o.customerTable.store.id IN :storeIds " +
-            "AND o.paymentState = 'DONE' " +
+            "AND o.paymentStatus = 'DONE' " +
             "AND o.createTimeAt >= :startAt AND o.createTimeAt < :endAt " +
             "GROUP BY FUNCTION('DAYOFWEEK', o.createTimeAt) " +
             "ORDER BY FUNCTION('DAYOFWEEK', o.createTimeAt)")

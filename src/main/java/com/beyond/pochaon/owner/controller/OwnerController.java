@@ -1,15 +1,17 @@
 package com.beyond.pochaon.owner.controller;
 
+import com.beyond.pochaon.owner.dto.OwnerSignUpSmsVerifyReqDto;
+import com.beyond.pochaon.common.dto.SmsSendReqDto;
 import com.beyond.pochaon.owner.dto.*;
 import com.beyond.pochaon.owner.service.OwnerLoginService;
 import com.beyond.pochaon.owner.service.OwnerMyPageService;
 import com.beyond.pochaon.owner.service.OwnerService;
-import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/owner")
@@ -63,17 +65,36 @@ public class OwnerController {
         return ResponseEntity.ok("비밀번호 변경 완료");
     }
 
+    @PostMapping("/verify-settlement-key")
+    public ResponseEntity<?> verifySettlementKey(
+            Authentication authentication,
+            @RequestBody SettlementKeyReqDto dto) {
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("인증 정보가 없습니다.");
+        }
+
+        String email = authentication.getName();
+        boolean isMatched = ownerLoginService.verifySettlementKey(email, dto.getSettlementKey());
+
+        if (isMatched) {
+            return ResponseEntity.ok("정산키 인증에 성공하였습니다.");
+        } else {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("정산키가 일치하지 않습니다.");
+        }
+    }
+
     @PostMapping("/verify-password")
     public ResponseEntity<?> verifyPassword(
             Authentication authentication, // UserDetails 대신 Authentication 주입
             @RequestBody OwnerPasswordVerifyDto dto) {
 
-        // 1. 인증 객체 체크
+        // 인증 객체 체크
         if (authentication == null || !authentication.isAuthenticated()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("인증 정보가 없습니다.");
         }
 
-        // 2. 이메일(Username) 추출
+        // 이메일(Username) 추출
         // SecurityContext에 이메일이 저장되도록 필터가 설정되어 있다면 getName()으로 가져옵니다.
         String email = authentication.getName();
 
@@ -84,5 +105,18 @@ public class OwnerController {
         } else {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("비밀번호가 일치하지 않습니다.");
         }
+    }
+
+    @PostMapping("/sms/send")
+    public void OwnerSmsSend(@RequestBody OwnerSignUpSmsSendReqDto dto){
+        ownerLoginService.sendSignup(dto.getPhone());
+    }
+
+    @PostMapping("/sms/verify")
+    public void OwnerSmsVerify(@RequestBody OwnerSignUpSmsVerifyReqDto dto){
+        ownerLoginService.verifySignup(
+                dto.getPhone(),
+                dto.getCode()
+        );
     }
 }

@@ -20,16 +20,19 @@ public class OwnerCreateDto {
     private String ownerName;
     @NotBlank(message = "이메일은 필수 입력 사항입니다.")
     private String ownerEmail;
+    @NotBlank(message = "전체 정산 키는 필수 입력 사항입니다.")
+    private String settlementKey;
 
     private String businessRegistrationNumber;
 
-    public Owner toEntity(String encodedPassword) {
+    public Owner toEntity(String encodedPassword, String encodedSettlementKey) {
         return Owner.builder()
                 .ownerEmail(this.ownerEmail)
                 .ownerName(this.ownerName)
                 .password(encodedPassword)
                 .phoneNumber(this.phoneNumber)
                 .businessRegistrationNumber(this.businessRegistrationNumber)
+                .settlementKey(encodedSettlementKey)
                 .build();
     }
 }

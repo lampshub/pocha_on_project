@@ -61,4 +61,9 @@ public class CustomerTable extends BaseTimeEntity {
         this.tableStatus = TableStatus.USING;
     }
 
+    public void clear() {
+        this.tableStatus = TableStatus.STANDBY;
+        this.groupId = null;
+    }
+
 }

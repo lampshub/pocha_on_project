@@ -30,6 +30,8 @@ public class Owner extends BaseTimeEntity {
     private String ownerName;
     @Column(unique = true)
     private String ownerEmail;
+    @Column(unique = true)
+    private String settlementKey;
 
     @Builder.Default
     @Enumerated(EnumType.STRING)

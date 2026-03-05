@@ -11,4 +11,5 @@ import lombok.NoArgsConstructor;
 @Builder
 public class StoreSelectDto {
     private Long storeId;
+    private String storeAccessKey;
 }

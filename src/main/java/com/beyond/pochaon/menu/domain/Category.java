@@ -21,7 +21,9 @@ public class Category {
     private Long id;
     private String categoryName;
     @Enumerated(EnumType.STRING)
-    private OrderAlarmTo orderAlarmTo;
+    @Builder.Default
+    @Column(nullable = false)
+    private OrderAlarmTo orderAlarmTo = OrderAlarmTo.KITCHEN;
 
     @OneToMany(mappedBy = "category", fetch = FetchType.LAZY)
     @Builder.Default
@@ -32,5 +34,8 @@ public class Category {
 
     public void updateName(String categoryName) {
         this.categoryName = categoryName;
+    }
+    public void updateOrderAlarmTo(OrderAlarmTo orderAlarmTo){
+        this.orderAlarmTo =orderAlarmTo;
     }
 }

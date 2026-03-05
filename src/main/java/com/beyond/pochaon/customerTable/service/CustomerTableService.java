@@ -2,6 +2,7 @@ package com.beyond.pochaon.customerTable.service;
 
 import com.beyond.pochaon.chat.service.ChatService;
 import com.beyond.pochaon.common.auth.JwtTokenProvider;
+import com.beyond.pochaon.common.kafka.KafkaService;
 import com.beyond.pochaon.common.service.SseAlarmService;
 import com.beyond.pochaon.common.web.WebPublisher;
 import com.beyond.pochaon.customerTable.domain.CustomerTable;
@@ -34,9 +35,10 @@ public class CustomerTableService {
     private final WebPublisher webPublisher;
     private final SseAlarmService sseAlarmService;
     private final ChatService chatService;
+    private final KafkaService kafkaService;
 
     @Autowired
-    public CustomerTableService(CustomerTableRepository customerTableRepository, StoreRepository storeRepository, OrderingRepository orderingRepository, SimpMessagingTemplate simpMessagingTemplate, JwtTokenProvider jwtTokenProvider, WebPublisher webPublisher, SseAlarmService sseAlarmService, ChatService chatService) {
+    public CustomerTableService(CustomerTableRepository customerTableRepository, StoreRepository storeRepository, OrderingRepository orderingRepository, SimpMessagingTemplate simpMessagingTemplate, JwtTokenProvider jwtTokenProvider, WebPublisher webPublisher, SseAlarmService sseAlarmService, ChatService chatService, KafkaService kafkaService) {
         this.customerTableRepository = customerTableRepository;
         this.storeRepository = storeRepository;
         this.orderingRepository = orderingRepository;
@@ -45,6 +47,7 @@ public class CustomerTableService {
         this.webPublisher = webPublisher;
         this.sseAlarmService = sseAlarmService;
         this.chatService = chatService;
+        this.kafkaService = kafkaService;
     }
 
 
@@ -53,7 +56,6 @@ public class CustomerTableService {
 //        CustomerTableStatusListDto statusListDto = getTableStatus(storeId, tableId);
 //        simpMessagingTemplate.convertAndSend("/topic/table-status/" + storeId, statusListDto);
 //    }
-
     /*
 매장의 전체 테이블 현황 조회 =================================
 

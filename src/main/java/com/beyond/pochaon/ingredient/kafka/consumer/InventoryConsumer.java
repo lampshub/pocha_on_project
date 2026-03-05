@@ -42,7 +42,7 @@ public class InventoryConsumer {
             ack.acknowledge();
         } catch (Exception e) {
             log.error("재고 처리 중 예외 발생: {}", e.getMessage());
-            // 처리 실패 시 ack를 호출하지 않으면, 설정에 따라 재시도함
+            ack.acknowledge();
         }
     }
 }
