@@ -16,13 +16,12 @@ public interface MenuRepository extends JpaRepository<Menu, Long> {
     List<Menu> findByCategoryId(Long categoryId);
     List<Menu> findByCategoryStoreId(Long storeId);
 
-    // 메뉴 상세 조회 (옵션 + 옵션디테일 fetch join)
     @Query("""
-                select distinct m
-                from Menu m
-                left join fetch m.menuOptionList mo
-                where m.id = :menuId
-            """)
+        select distinct m
+        from Menu m
+        left join fetch m.menuOptionList mo
+        where m.id = :menuId
+    """)
     Optional<Menu> findDetailById(@Param("menuId") Long menuId);
 }
 

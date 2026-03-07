@@ -1,6 +1,7 @@
 package com.beyond.pochaon.common.kafka;
 
 import com.beyond.pochaon.menu.domain.OrderAlarmTo;
+import com.beyond.pochaon.ordering.dto.MenuDoneDto;
 import com.beyond.pochaon.ordering.dto.OrderCreateDto;
 import com.beyond.pochaon.ordering.dto.OrderQueueDto;
 import com.beyond.pochaon.owner.domain.Owner;
@@ -10,6 +11,7 @@ import com.beyond.pochaon.present.dto.PresentOwnerDto;
 import com.beyond.pochaon.present.dto.PresentQueueDto;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.handler.annotation.Header;
@@ -28,11 +30,12 @@ public class ConsumerService {
     private final ObjectMapper objectMapper;
     private final SimpMessagingTemplate messagingTemplate;
 
-
+    @Autowired
     public ConsumerService(ObjectMapper objectMapper, SimpMessagingTemplate messagingTemplate) {
         this.objectMapper = objectMapper;
         this.messagingTemplate = messagingTemplate;
     }
+
 //     주문1. 일반 주문 분기 (점주)
 @KafkaListener(topics = "order-topic", groupId = "owner-topic-group", containerFactory = "OwnerListener") //다른 서버 가정
 public void owner(@Header(KafkaHeaders.RECEIVED_KEY) String key, String message) throws JsonProcessingException {
@@ -46,7 +49,6 @@ public void owner(@Header(KafkaHeaders.RECEIVED_KEY) String key, String message)
         messagingTemplate.convertAndSend("/topic/owner/" + key, orderCreateDto);
     }
 }
-
 
 
 //    주문2. Que -같은 토픽, 다른 그룹 아이디 -> 점주/주방-일반/선물 분기
@@ -80,6 +82,7 @@ public void owner(@Header(KafkaHeaders.RECEIVED_KEY) String key, String message)
         }
     }
 
+
     @KafkaListener(topics = "orderQue-topic", groupId = "kitchenQue-topic-group", containerFactory = "KitchenListener")
     public void kitchenQue(@Header(KafkaHeaders.RECEIVED_KEY) String key, String message) throws JsonProcessingException {
         EventQueDto eventQueDto = objectMapper.readValue(message, EventQueDto.class);
@@ -108,5 +111,11 @@ public void owner(@Header(KafkaHeaders.RECEIVED_KEY) String key, String message)
             messagingTemplate.convertAndSend("/topic/kitchenQue/" + key, orderQueueDto);
         }
     }
-}
 
+
+    @KafkaListener(topics = "menuDone-topic", groupId = "${spring.kafka.consumer.menuDone-group-id}", containerFactory = "MenuDoneListener")
+    public void MenuDone(@Header(KafkaHeaders.RECEIVED_KEY) String key, String message) throws JsonProcessingException {
+        MenuDoneDto menuDoneDto = objectMapper.readValue(message, MenuDoneDto.class);
+        messagingTemplate.convertAndSend("/topic/kitchen-done/" + key, menuDoneDto);
+    }
+}

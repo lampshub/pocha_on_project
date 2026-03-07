@@ -14,9 +14,12 @@ import java.util.UUID;
 
 @Repository
 public interface OrderingRepository extends JpaRepository<Ordering, Long> {
-
-    List<Ordering> findByGroupId(UUID groupId);
-
+    // 수정
+    @Query("SELECT DISTINCT o FROM Ordering o " +
+            "LEFT JOIN FETCH o.orderDetail od " +
+            "LEFT JOIN FETCH od.menu " +
+            "WHERE o.groupId = :groupId")
+    List<Ordering> findByGroupId(@Param("groupId") UUID groupId);
     @Query("SELECT DISTINCT o FROM Ordering o " +
             "JOIN FETCH o.orderDetail od " +
             "JOIN FETCH od.menu m " +
@@ -35,7 +38,10 @@ public interface OrderingRepository extends JpaRepository<Ordering, Long> {
     @Query("SELECT DISTINCT o FROM Ordering o LEFT JOIN FETCH o.orderDetail od LEFT JOIN FETCH od.menu WHERE o.groupId IN :groupId")
     List<Ordering> findAllWithDetailsByGroupIds(@Param("groupId") List<UUID> groupId);
 
-    @Query("SELECT DISTINCT o FROM Ordering o LEFT JOIN FETCH o.orderDetail od LEFT JOIN FETCH od.menu LEFT JOIN FETCH od.orderingDetailOptions WHERE o.groupId IN :groupId")
+    @Query("SELECT DISTINCT o FROM Ordering o " +
+            "LEFT JOIN FETCH o.orderDetail od " +
+            "LEFT JOIN FETCH od.menu " +
+            "WHERE o.groupId = :groupId")
     List<Ordering> findAllWithDetailsByGroupId(@Param("groupId") UUID groupId);
 
     Ordering findByIdempotencyKey(UUID idempotencyKey);

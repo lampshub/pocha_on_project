@@ -1,8 +1,11 @@
 package com.beyond.pochaon.ordering.service;
 
+import com.beyond.pochaon.common.kafka.KafkaService;
 import com.beyond.pochaon.ordering.domain.OrderStatus;
 import com.beyond.pochaon.ordering.domain.Ordering;
+import com.beyond.pochaon.ordering.dto.MenuDoneDto;
 import com.beyond.pochaon.ordering.dto.OrderQueueDto;
+import com.beyond.pochaon.ordering.repository.OrderingDetailRepository;
 import com.beyond.pochaon.ordering.repository.OrderingRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +13,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -20,11 +24,15 @@ public class OrderingService {
 
     private final OrderingRepository orderingRepository;
     private final SimpMessagingTemplate simpMessagingTemplate;
+    private final OrderingDetailRepository orderingDetailRepository;
+    private final KafkaService kafkaService;
 
     @Autowired
-    public OrderingService(OrderingRepository orderingRepository, SimpMessagingTemplate simpMessagingTemplate) {
+    public OrderingService(OrderingRepository orderingRepository, SimpMessagingTemplate simpMessagingTemplate, OrderingDetailRepository orderingDetailRepository, KafkaService kafkaService) {
         this.orderingRepository = orderingRepository;
         this.simpMessagingTemplate = simpMessagingTemplate;
+        this.orderingDetailRepository = orderingDetailRepository;
+        this.kafkaService = kafkaService;
     }
 
     // 점주 화면 로드시 Stanby 만 조회
@@ -32,6 +40,11 @@ public class OrderingService {
     public List<OrderQueueDto> getOrderQueue(Long storeId) {
 //       현 매장의 StanBy 주문만 조회
         List<Ordering> standByOrders = orderingRepository.findByStoreIdAndOrderStatus(storeId, OrderStatus.STANDBY);
+        if (!standByOrders.isEmpty()) {
+            List<Long> orderingIds = standByOrders.stream()
+                    .map(Ordering::getId).toList();
+            orderingDetailRepository.fetchOptionsForOrderings(orderingIds);
+        }
 //        엔티티 -> dto 변환
         return standByOrders.stream().map(OrderQueueDto::fromEntity).toList();
     }
@@ -65,5 +78,22 @@ public class OrderingService {
 
     public int getGroupIdTotal(UUID groupId) {
         return orderingRepository.sumTotalPriceByGroupId(groupId);
+    }
+
+//    주방이 메뉴완료버튼 -> 점주에게 kafka
+    public void menuDone(MenuDoneDto dto, Long storeId){
+        MenuDoneDto payload = MenuDoneDto.builder()
+                .menuDoneId(UUID.randomUUID())
+                .orderingId(dto.getOrderingId())
+                .tableNum(dto.getTableNum())
+                .menuName(dto.getMenuName())
+                .menuQuantity(dto.getMenuQuantity())
+                .menuTotal(dto.getMenuTotal())
+                .createAt(LocalDateTime.now())
+                .storeId(storeId)
+                .menuOptionlist(dto.getMenuOptionlist())
+                .build();
+
+        kafkaService.menuDone(payload, storeId);
     }
 }

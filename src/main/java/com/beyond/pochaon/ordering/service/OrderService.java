@@ -18,6 +18,7 @@ import com.beyond.pochaon.ordering.domain.*;
 import com.beyond.pochaon.ordering.dto.OrderCreateDto;
 import com.beyond.pochaon.ordering.dto.OrderListDto;
 import com.beyond.pochaon.ordering.dto.OrderQueueDto;
+import com.beyond.pochaon.ordering.repository.OrderingDetailRepository;
 import com.beyond.pochaon.ordering.repository.OrderingRepository;
 import com.beyond.pochaon.present.dto.EventQueDto;
 import com.beyond.pochaon.present.dto.OwnerEventDto;
@@ -46,6 +47,7 @@ public class OrderService {
     private final CartService cartService;
     private final MenuRepository menuRepository;
     private final MenuOptionRepository menuOptionRepository;
+    private final OrderingDetailRepository orderingDetailRepository;
     private final OrderingRepository orderingRepository;
     @Qualifier("idempotencyRedisTemplate")
     private final RedisTemplate<String, String> idempotencyRedisTemplate;
@@ -62,10 +64,11 @@ public class OrderService {
 
 
     @Autowired
-    public OrderService(CartService cartService, MenuRepository menuRepository, MenuOptionRepository menuOptionRepository, OrderingRepository orderingRepository, @Qualifier("idempotencyRedisTemplate") RedisTemplate<String, String> idempotencyRedisTemplate, SimpMessagingTemplate messagingTemplate, CustomerTableRepository customerTableRepository, @Qualifier("groupRedisTemplate") RedisTemplate<String, String> groupRedisTemplate, KafkaService kafkaService, WebPublisher webPublisher, MenuOptionDetailRepository menuOptionDetailRepository, KafkaTemplate<String, Object> kafkaTemplate, ObjectMapper objectMapper, IngredientService ingredientService) {
+    public OrderService(CartService cartService, MenuRepository menuRepository, MenuOptionRepository menuOptionRepository, OrderingDetailRepository orderingDetailRepository, OrderingRepository orderingRepository, @Qualifier("idempotencyRedisTemplate") RedisTemplate<String, String> idempotencyRedisTemplate, SimpMessagingTemplate messagingTemplate, CustomerTableRepository customerTableRepository, @Qualifier("groupRedisTemplate") RedisTemplate<String, String> groupRedisTemplate, KafkaService kafkaService, WebPublisher webPublisher, MenuOptionDetailRepository menuOptionDetailRepository, KafkaTemplate<String, Object> kafkaTemplate, ObjectMapper objectMapper, IngredientService ingredientService) {
         this.cartService = cartService;
         this.menuRepository = menuRepository;
         this.menuOptionRepository = menuOptionRepository;
+        this.orderingDetailRepository = orderingDetailRepository;
         this.orderingRepository = orderingRepository;
         this.idempotencyRedisTemplate = idempotencyRedisTemplate;
         this.messagingTemplate = messagingTemplate;
@@ -214,7 +217,7 @@ public class OrderService {
                 .build();
 
 //        webPublisher.publish(eventDto);
-        kafkaService.orderCreate(eventDto,storeId);
+        kafkaService.orderCreate(eventDto, storeId);
 
 //       orderQue kafka
         EventQueDto eventQueDto = EventQueDto.builder()
@@ -347,7 +350,8 @@ public class OrderService {
         if (orderings == null || orderings.isEmpty()) {
             throw new IllegalArgumentException("주문내역이 없습니다");
         }
-
+        List<Long> orderingIds = orderings.stream().map(Ordering::getId).toList();
+        orderingDetailRepository.fetchOptionsForOrderings(orderingIds);
         Ordering first = orderings.get(0);
 
         if (!(first.getCustomerTable().getTableNum() == (tableNum))) {

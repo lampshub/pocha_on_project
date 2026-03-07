@@ -38,4 +38,10 @@ public interface IngredientMenuRepository extends JpaRepository<IngredientMenu, 
     List<Object[]> findMenuCostByStoreId(@Param("storeId") Long storeId);
 
     boolean existsByIngredient(Ingredient ingredient);
+
+    // IngredientMenuRepository.java에 추가
+    @Query("SELECT im FROM IngredientMenu im " +
+            "JOIN FETCH im.ingredient " +
+            "WHERE im.menu.id = :menuId")
+    List<IngredientMenu> findByMenuIdWithIngredient(@Param("menuId") Long menuId);
 }

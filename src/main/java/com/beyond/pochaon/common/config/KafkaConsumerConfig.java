@@ -49,4 +49,11 @@ public class KafkaConsumerConfig {
         listener.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL);
         return listener;
     }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, String> MenuDoneListener(){
+        ConcurrentKafkaListenerContainerFactory<String, String> listener = new ConcurrentKafkaListenerContainerFactory<>();
+        listener.setConsumerFactory(consumerFactory());
+        return listener;
+    }
 }

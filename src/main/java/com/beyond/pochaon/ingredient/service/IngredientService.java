@@ -227,13 +227,13 @@ public class IngredientService {
     //  전체 식자재 리스트 조회 (상태 배지 포함)
     @Transactional(readOnly = true)
     public List<IngredientListResDto> getIngredientList(Long storeId) {
-        List<Ingredient> ingredients = ingredientRepository.findByStoreId(storeId);
+        List<Ingredient> ingredients = ingredientRepository.findByStoreIdWithDetails(storeId);
 
         return ingredients.stream().map(ing -> {
             // 해당 식자재의 전체 가용 재고 합산
-            Integer totalCurrent = detailRepository.sumCurrentQuantityByIngredient(ing);
-            int current = (totalCurrent != null) ? totalCurrent : 0;
-            int safety = ing.getSafetyStock();
+            int current = ing.getDetails().stream()
+                    .mapToInt(IngredientDetail::getCurrentQuantity)
+                    .sum();
 
             // 배지 색상 결정 로직
             StockStatus status = calculateStockStatus(current, ing.getSafetyStock());
@@ -256,7 +256,7 @@ public class IngredientService {
         Menu menu = menuRepository.findById(menuId)
                 .orElseThrow(() -> new EntityNotFoundException("메뉴를 찾을 수 없습니다."));
 
-        List<IngredientMenu> recipes = ingredientMenuRepository.findByMenuId(menuId);
+        List<IngredientMenu> recipes = ingredientMenuRepository.findByMenuIdWithIngredient(menuId);
 
         List<RecipeDetailResDto.IngredientUsageInfo> ingredientInfos = recipes.stream()
                 .map(r -> RecipeDetailResDto.IngredientUsageInfo.builder()

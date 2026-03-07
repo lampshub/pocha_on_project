@@ -45,6 +45,14 @@ public class StompHandler implements ChannelInterceptor {
                 Long request = Long.parseLong(destination.replace("/topic/table/", ""));
                 if (!myTableNum.equals(request)) throw new IllegalArgumentException("해당하는 테이블만 구독이 가능합니다");
             }
+
+            if (destination.startsWith("/topic/kitchen-done/")) {
+                if (!"STORE".equals(stage)) throw new IllegalArgumentException("점주에게만 구독권한이 있습니다");
+                Long myStoreId = ((Number) accessor.getSessionAttributes().get("storeId")).longValue();
+                Long request = Long.parseLong(destination.replace("/topic/kitchen-done/", ""));
+                if (!myStoreId.equals(request)) throw new IllegalArgumentException("해당 store만 구독이 가능합니다");
+            }
+
         }
 
         return message;

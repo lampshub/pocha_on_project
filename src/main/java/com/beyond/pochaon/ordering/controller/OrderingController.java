@@ -1,6 +1,7 @@
 package com.beyond.pochaon.ordering.controller;
 
 
+import com.beyond.pochaon.ordering.dto.MenuDoneDto;
 import com.beyond.pochaon.ordering.dto.OrderQueueDto;
 import com.beyond.pochaon.ordering.service.OrderingService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +29,15 @@ public class OrderingController {
         return ResponseEntity.ok(queueDto);
     }
 
-    //    점주가 조리완료 버튼 클릭 -> 하단 주문내역에서 사라짐
+    //  주방에서 조리완료 버튼 클릭 -> 점주que로 들어감
+    @PostMapping("/menudone")
+    public ResponseEntity<?> menuDone(@RequestBody MenuDoneDto dto, @RequestAttribute Long storeId){
+        orderingService.menuDone(dto, storeId);
+        return ResponseEntity.ok(dto);
+    }
+
+
+    //    점주가 서빙완료 버튼 클릭 -> 하단 주문내역에서 사라짐
     @PostMapping("/done/{orderingId}")
     public ResponseEntity<OrderQueueDto> completeOrder(@PathVariable Long orderingId, @RequestAttribute Long storeId) {
         OrderQueueDto dto = orderingService.completeOrder(orderingId, storeId);

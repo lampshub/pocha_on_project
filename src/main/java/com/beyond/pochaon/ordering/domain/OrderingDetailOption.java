@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.BatchSize;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +26,7 @@ public class OrderingDetailOption {
     @JoinColumn(name = "ordering_detail_id", foreignKey = @ForeignKey(ConstraintMode.CONSTRAINT), nullable = false)
     private OrderingDetail orderingDetail;
 
+    @BatchSize(size = 100)
     @OneToMany(mappedBy = "detailOption", fetch = FetchType.LAZY,cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<OrderingDetailOptionDetail> orderingDetailOptionDetails= new ArrayList<>();

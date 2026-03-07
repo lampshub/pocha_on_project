@@ -19,4 +19,18 @@ public interface IngredientRepository extends JpaRepository<Ingredient, Long> {
     Optional<Ingredient> findByStoreIdAndNameWithLock(@Param("storeId") Long storeId, @Param("name") String name);
 
     List<Ingredient> findByStoreId(Long storeId);
+
+    @Query("SELECT DISTINCT i FROM Ingredient i " +
+            "LEFT JOIN FETCH i.details " +
+            "WHERE i.store.id = :storeId")
+    List<Ingredient> findByStoreIdWithDetails(@Param("storeId") Long storeId);
+
+    @Query("SELECT DISTINCT i FROM Ingredient i " +
+            "LEFT JOIN FETCH i.ingredientMenus im " +
+            "LEFT JOIN FETCH im.menu " +
+            "WHERE i.store.id = :storeId")
+    List<Ingredient> findByStoreIdWithMenus(@Param("storeId") Long storeId);
+
+
+
 }

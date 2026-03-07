@@ -1,6 +1,7 @@
 package com.beyond.pochaon.common.kafka;
 
 import com.beyond.pochaon.menu.domain.OrderAlarmTo;
+import com.beyond.pochaon.ordering.dto.MenuDoneDto;
 import com.beyond.pochaon.present.dto.EventQueDto;
 import com.beyond.pochaon.present.dto.OwnerEventDto;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -39,4 +40,13 @@ public class KafkaService {
         }
     }
 
+//    주방->점주 조리완료 발행
+    public void menuDone(MenuDoneDto dto, Long storeId){
+        try{
+            String data = objectMapper.writeValueAsString(dto);
+            kafkaTemplate.send("menuDone-topic",storeId.toString(), data);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }
